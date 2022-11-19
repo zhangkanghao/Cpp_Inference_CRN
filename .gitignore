@@ -1,0 +1,9 @@
+# Project exclude paths
+/cmake-build-debug/
+/resources
+/Eigen
+/utils
+/unsupported
+signature_of_eigen3_matrix_library
+main1.cpp
+mat_test.cpp
