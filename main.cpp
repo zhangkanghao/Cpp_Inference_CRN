@@ -10,22 +10,46 @@ using namespace std;
 void print(Eigen::Tensor<float_t, 4> input) {
     const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
     cout << "Variable:" << endl;
+    cout << "[";
     for (int i = 0; i < dim_inp[0]; i++) {
+        if (i > 0) {
+            cout << " ";
+        }
         cout << "[";
         for (int j = 0; j < dim_inp[1]; j++) {
+            if (j > 0) {
+                cout << "  ";
+            }
             cout << "[";
             for (int k = 0; k < dim_inp[2]; k++) {
-                for (int l = 0; l < dim_inp[3]; l++) {
-                    cout << input(i, j, k, l) << " ";
+                if (k > 0) {
+                    cout << "   ";
                 }
-                cout << endl;
+                cout << "[";
+                for (int l = 0; l < dim_inp[3]; l++) {
+                    cout << input(i, j, k, l);
+                    if (l < dim_inp[3] - 1) {
+                        cout << "\t";
+                    }
+                }
+                cout << "]";
+                if (k < dim_inp[2] - 1) {
+                    cout << "," << endl;
+                }
             }
-            cout << "]" << endl;
+            cout << "]";
+            if (j < dim_inp[1] - 1) {
+                cout << endl << endl;
+            }
         }
-
-        cout << "]" << endl;
+        cout << "]";
+        if (i < dim_inp[0] - 1) {
+            cout << endl;
+        }
     }
+    cout << "]";
 }
+
 
 /*
 // Test Convolution
@@ -206,19 +230,97 @@ Eigen::Tensor<float_t, 4> tranposed_conv2d(Eigen::Tensor<float_t, 4> &input) {
     return output;
 }
 */
+Eigen::Tensor<float_t, 4> transpose(Eigen::Tensor<float_t, 4> &input, Eigen::array<int64_t, 4> trans_idx) {
+    const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
+    Eigen::Tensor<size_t, 4>::Dimensions dim_out;
+    for (int i = 0; i < 4; i++) {
+        dim_out[i] = dim_inp[trans_idx[i]];
+        cout << dim_out[i] << endl;
+    }
+
+    Eigen::Tensor<float_t, 4> output(dim_out[0], dim_out[1], dim_out[2], dim_out[3]);
+    for (int64_t i = 0; i < dim_out[0]; i++) {
+        for (int64_t j = 0; j < dim_out[1]; j++) {
+            for (int64_t k = 0; k < dim_out[2]; k++) {
+                for (int64_t l = 0; l < dim_out[3]; l++) {
+                    int64_t idx_inp[4] = {i, j, k, l};
+                    output(i, j, k, l) = input(idx_inp[trans_idx[0]], idx_inp[trans_idx[1]], idx_inp[trans_idx[2]],
+                                               idx_inp[trans_idx[3]]);
+                }
+            }
+        }
+    }
+    return output;
+}
+
+Eigen::Tensor<float_t, 3> viewForward(Eigen::Tensor<float_t, 4> &input) {
+    const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
+
+    Eigen::Tensor<float_t, 3> output(dim_inp[0], dim_inp[1], dim_inp[2] * dim_inp[3]);
+    for (int64_t i = 0; i < dim_inp[0]; i++) {
+        for (int64_t j = 0; j < dim_inp[1]; j++) {
+            for (int64_t k = 0; k < dim_inp[2]; k++) {
+                for (int64_t l = 0; l < dim_inp[3]; l++) {
+                    output(i, j, k * dim_inp[3] + l) = input(i, j, k, l);
+                }
+            }
+        }
+    }
+    return output;
+}
+
+Eigen::Tensor<float_t, 4> viewBackward(Eigen::Tensor<float_t, 3> &input, Eigen::array<int64_t, 4> dims) {
+
+    Eigen::Tensor<float_t, 4> output(dims[0], dims[1], dims[2], dims[3]);
+    for (int64_t i = 0; i < dims[0]; i++) {
+        for (int64_t j = 0; j < dims[1]; j++) {
+            for (int64_t k = 0; k < dims[2]; k++) {
+                for (int64_t l = 0; l < dims[3]; l++) {
+                    output(i, j, k, l) = input(i, j, k * dims[3] + l);
+                }
+            }
+        }
+    }
+    return output;
+}
+
+Eigen::Tensor<float_t, 3> lstm_forward(Eigen::Tensor<float_t, 3> &input, Eigen::Tensor<float_t, 3> &hc) {
+//    const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
+//    Eigen::Tensor<float_t, 2> weight_hh
+}
 
 int main() {
-    // Test Convolution
-    Eigen::Tensor<float_t, 4> input(1, 1, 3, 3);
-    for (int k = 0; k < 1; k++) {
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                input(0, k, i, j) = i * 3 + j + 1;
+
+    Eigen::Tensor<float, 4> input(1, 2, 3, 4);
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 4; l++) {
+                    input(i, j, k, l) = 24 * i + 12 * j + 4 * k + l + 1;
+                }
             }
         }
     }
     print(input);
-    return 0;
+
+
+    // LSTM
+    Eigen::Tensor<float, 4> _in_reshape = transpose(input, Eigen::array<int64_t, 4>{0, 2, 1, 3});
+    print(_in_reshape);
+    Eigen::Tensor<float, 3> _in_view = viewForward(_in_reshape);
+    cout << _in_view << endl;
+    Eigen::Tensor<float, 3> _hc(2, 1, 8);
+    _hc.setZero();
+    Eigen::Tensor<float, 3> _lstm_out = lstm_forward(_in_view, _hc);
+    cout << _lstm_out << endl;
+    Eigen::Tensor<float, 4> _out_view = viewBackward(_lstm_out, Eigen::array<int64_t, 4>{1, 3, 2, 4});
+    print(_out_view);
+    Eigen::Tensor<float, 4> _out_reshape = transpose(input, Eigen::array<int64_t, 4>{0, 2, 1, 3});
+    print(_out_reshape);
+
+
+
+
 
 
 
