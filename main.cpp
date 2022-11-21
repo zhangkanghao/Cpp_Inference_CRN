@@ -47,7 +47,7 @@ void print(Eigen::Tensor<float_t, 4> input) {
             cout << endl;
         }
     }
-    cout << "]";
+    cout << "]" << endl;
 }
 
 
@@ -235,7 +235,6 @@ Eigen::Tensor<float_t, 4> transpose(Eigen::Tensor<float_t, 4> &input, Eigen::arr
     Eigen::Tensor<size_t, 4>::Dimensions dim_out;
     for (int i = 0; i < 4; i++) {
         dim_out[i] = dim_inp[trans_idx[i]];
-        cout << dim_out[i] << endl;
     }
 
     Eigen::Tensor<float_t, 4> output(dim_out[0], dim_out[1], dim_out[2], dim_out[3]);
@@ -284,45 +283,74 @@ Eigen::Tensor<float_t, 4> viewBackward(Eigen::Tensor<float_t, 3> &input, Eigen::
     return output;
 }
 
-Eigen::Tensor<float_t, 3> lstm_forward(Eigen::Tensor<float_t, 3> &input, Eigen::Tensor<float_t, 3> &hc) {
-//    const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
-//    Eigen::Tensor<float_t, 2> weight_hh
+
+int64_t batch = 2, channel = 2, timel = 3, freq = 2, hidden_size = 6;
+
+Eigen::Tensor<float_t, 3> lstm_forward(Eigen::Tensor<float_t, 3> &input, Eigen::Tensor<float_t, 2> &h_t,
+                                       Eigen::Tensor<float_t, 2> &c_t) {
+
+    const Eigen::Tensor<size_t, 3>::Dimensions &dim_inp = input.dimensions();
+    int64_t _BATCH = dim_inp[0], _TIME = dim_inp[1], _FREQ = dim_inp[2], _HIDDEN = hidden_size;
+    Eigen::Tensor<float_t, 2> weight_ih_l0(_HIDDEN * 4, _FREQ);
+    Eigen::Tensor<float_t, 2> weight_hh_l0(_HIDDEN * 4, _HIDDEN);
+    Eigen::Tensor<float_t, 2> bias_ih_l0(1, _HIDDEN * 4);
+    Eigen::Tensor<float_t, 2> bias_hh_l0(1, _HIDDEN * 4);
+    weight_ih_l0.setRandom();
+    weight_hh_l0.setRandom();
+    bias_ih_l0.setValues(
+            {{0.2221f, 0.1316f, 0.1657f, 0.1547f, 0.1213f, 0.8876f, 0.2221f, 0.1316f, 0.1657f, 0.1547f, 0.1213f,
+              0.8876f, 0.2221f, 0.1316f, 0.1657f, 0.1547f, 0.1213f, 0.8876f, 0.2221f, 0.1316f, 0.1657f, 0.1547f,
+              0.1213f, 0.8876f}});
+    bias_hh_l0.setValues(
+            {{0.5645f, 0.1556f, 0.7612f, 0.1321f, 0.6545f, 0.4567f, 0.5645f, 0.1556f, 0.7612f, 0.1321f, 0.6545f,
+              0.4567f, 0.5645f, 0.1556f, 0.7612f, 0.1321f, 0.6545f, 0.4567f, 0.5645f, 0.1556f, 0.7612f, 0.1321f,
+              0.6545f, 0.4567f,}});
+    Eigen::Tensor<float_t, 2> bias_ih_broadcast = bias_ih_l0.broadcast(Eigen::array<int64_t, 2>{_BATCH, 1});
+    Eigen::Tensor<float_t, 2> bias_hh_broadcast = bias_hh_l0.broadcast(Eigen::array<int64_t, 2>{_BATCH, 1});
+
+    Eigen::Tensor<float_t, 3> output(_BATCH, _TIME, _HIDDEN);
+    Eigen::Tensor<float_t, 2> X_t(_BATCH, _FREQ);
+    Eigen::Tensor<float_t, 2> gates;
+    Eigen::Tensor<float_t, 2> i_t, f_t, g_t, o_t;
+    Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 1)};
+    Eigen::array<int64_t, 2> gate_patch = Eigen::array<int64_t, 2>{_BATCH, _HIDDEN};
+    for (int t = 0; t < _TIME; t++) {
+        X_t = input.chip(t, 1);
+        gates = X_t.contract(weight_ih_l0, product_dims) + bias_ih_broadcast +
+                h_t.contract(weight_hh_l0, product_dims) + bias_hh_broadcast;
+        i_t = gates.slice(Eigen::array<int64_t, 2>{0, _HIDDEN * 0}, gate_patch).sigmoid();
+        f_t = gates.slice(Eigen::array<int64_t, 2>{0, _HIDDEN * 1}, gate_patch).sigmoid();
+        g_t = gates.slice(Eigen::array<int64_t, 2>{0, _HIDDEN * 2}, gate_patch).tanh();
+        o_t = gates.slice(Eigen::array<int64_t, 2>{0, _HIDDEN * 3}, gate_patch).sigmoid();
+        c_t = f_t * c_t + i_t * g_t;
+        h_t = o_t * c_t.tanh();
+        output.chip(t, 1) = h_t;
+    }
+
+    return output;
 }
 
 int main() {
 
-    Eigen::Tensor<float, 4> input(1, 2, 3, 4);
-    for (int i = 0; i < 1; i++) {
-        for (int j = 0; j < 2; j++) {
-            for (int k = 0; k < 3; k++) {
-                for (int l = 0; l < 4; l++) {
-                    input(i, j, k, l) = 24 * i + 12 * j + 4 * k + l + 1;
-                }
-            }
-        }
-    }
+    Eigen::Tensor<float, 4> input(batch, channel, timel, freq);
+    input.setRandom();
     print(input);
-
 
     // LSTM
     Eigen::Tensor<float, 4> _in_reshape = transpose(input, Eigen::array<int64_t, 4>{0, 2, 1, 3});
-    print(_in_reshape);
     Eigen::Tensor<float, 3> _in_view = viewForward(_in_reshape);
     cout << _in_view << endl;
-    Eigen::Tensor<float, 3> _hc(2, 1, 8);
-    _hc.setZero();
-    Eigen::Tensor<float, 3> _lstm_out = lstm_forward(_in_view, _hc);
+    Eigen::Tensor<float, 2> _hidden_state(batch, hidden_size);
+    Eigen::Tensor<float, 2> _cell_state(batch, hidden_size);
+    _hidden_state.setZero();
+    _cell_state.setZero();
+    Eigen::Tensor<float, 3> _lstm_out = lstm_forward(_in_view, _hidden_state, _cell_state);
     cout << _lstm_out << endl;
-    Eigen::Tensor<float, 4> _out_view = viewBackward(_lstm_out, Eigen::array<int64_t, 4>{1, 3, 2, 4});
+    Eigen::Tensor<float, 4> _out_view = viewBackward(_lstm_out, Eigen::array<int64_t, 4>{batch, timel, channel,
+                                                                                         hidden_size / channel});
     print(_out_view);
-    Eigen::Tensor<float, 4> _out_reshape = transpose(input, Eigen::array<int64_t, 4>{0, 2, 1, 3});
+    Eigen::Tensor<float, 4> _out_reshape = transpose(_out_view, Eigen::array<int64_t, 4>{0, 2, 1, 3});
     print(_out_reshape);
-
-
-
-
-
-
 
 //    const char *path = "C:/Users/65181/CLionProjects/CRN/resources/crn.mat";
 //    const char *wav_path = "C:/Users/65181/CLionProjects/CRN/resources/S006_ADTbabble_snr0_tgt.wav";
