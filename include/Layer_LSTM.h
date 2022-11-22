@@ -13,17 +13,18 @@ class Layer_LSTM {
 public:
     Layer_LSTM();
 
-    Layer_LSTM(int32_t inp_size, int32_t hid_size, int32_t num_layer = 2, bool bidirectional = false);
+    Layer_LSTM(int64_t inp_size, int64_t hid_size, int64_t num_layer = 2, bool bidirectional = false);
 
     void LoadState(MATFile *pmFile, const std::string &state_preffix);
 
-    Eigen::Tensor<float_t, 3> forward(Eigen::Tensor<float_t, 3> &input);
+    Eigen::Tensor<float_t, 3> forward(Eigen::Tensor<float_t, 3> &input, std::vector<Eigen::Tensor<float_t, 2>> &h_t,
+                                      std::vector<Eigen::Tensor<float_t, 2>> &c_t);
 
 private:
-    int32_t input_size;
-    int32_t hidden_size;
-    int32_t num_layers;
-    int32_t direction;
+    int64_t input_size;
+    int64_t hidden_size;
+    int64_t num_layers;
+    int64_t direction;
     std::vector<Eigen::Tensor<float_t, 2>> weight_hh, weight_ih;
     std::vector<Eigen::Tensor<float_t, 2>> bias_hh, bias_ih;
 

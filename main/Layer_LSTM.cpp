@@ -12,7 +12,7 @@ Layer_LSTM::Layer_LSTM() {
     this->direction = 1;
 }
 
-Layer_LSTM::Layer_LSTM(int32_t inp_size, int32_t hid_size, int32_t num_layer, bool bidirectional) {
+Layer_LSTM::Layer_LSTM(int64_t inp_size, int64_t hid_size, int64_t num_layer, bool bidirectional) {
     this->input_size = inp_size;
     this->hidden_size = hid_size;
     this->num_layers = num_layer;
@@ -89,12 +89,53 @@ void Layer_LSTM::LoadState(MATFile *pmFile, const std::string &state_preffix) {
 
 }
 
-Eigen::Tensor<float_t, 3> Layer_LSTM::forward(Eigen::Tensor<float_t, 3> &input) {
-    const Eigen::Tensor<size_t, 3>::Dimensions &dim_inp = input.dimensions();
-    int32_t batch = dim_inp[0], seq_len = dim_inp[1], feat_len = dim_inp[2];
-    for (int idx_layer = 0; idx_layer < this->num_layers; idx_layer++) {
-
+Eigen::Tensor<float_t, 3> Layer_LSTM::forward(Eigen::Tensor<float_t, 3> &input,
+                                              std::vector<Eigen::Tensor<float_t, 2>> &h_t,
+                                              std::vector<Eigen::Tensor<float_t, 2>> &c_t) {
+    Eigen::Tensor<size_t, 3>::Dimensions dim_inp = input.dimensions();
+    Eigen::Tensor<float_t, 3> out_pointer = input;
+    if (h_t.empty() || c_t.empty()) {
+        for (int idx_layer = 0; idx_layer < this->num_layers; idx_layer++) {
+            Eigen::Tensor<float, 2> ht_zeros(dim_inp[0], this->hidden_size);
+            Eigen::Tensor<float, 2> ct_zeros(dim_inp[0], this->hidden_size);
+            ht_zeros.setZero();
+            ct_zeros.setZero();
+            h_t.push_back(ht_zeros);
+            c_t.push_back(ct_zeros);
+        }
     }
-    Eigen::Tensor<float_t, 3> a(1, 1, 1);
-    return a;
+    for (int idx_layer = 0; idx_layer < this->num_layers; idx_layer++) {
+        Eigen::Tensor<size_t, 3>::Dimensions dim_cur = out_pointer.dimensions();
+        int64_t N_BATCH = dim_cur[0], N_TIME = dim_cur[1], N_FREQ = dim_cur[2], N_HIDDEN = this->hidden_size;
+        Eigen::Tensor<float_t, 2> cur_w_ih = this->weight_ih[idx_layer];
+        Eigen::Tensor<float_t, 2> cur_w_hh = this->weight_hh[idx_layer];
+        Eigen::Tensor<float_t, 2> cur_b_ih = this->bias_ih[idx_layer].broadcast(Eigen::array<int64_t, 2>{N_BATCH, 1});
+        Eigen::Tensor<float_t, 2> cur_b_hh = this->bias_hh[idx_layer].broadcast(Eigen::array<int64_t, 2>{N_BATCH, 1});
+        Eigen::Tensor<float, 2> &cur_ht = h_t[idx_layer];
+        Eigen::Tensor<float, 2> &cur_ct = c_t[idx_layer];
+
+
+        Eigen::Tensor<float_t, 3> output(N_BATCH, N_TIME, N_HIDDEN);
+        Eigen::Tensor<float_t, 2> X_t(N_BATCH, N_FREQ);
+        Eigen::Tensor<float_t, 2> gates;
+        Eigen::Tensor<float_t, 2> i_t, f_t, g_t, o_t;
+        Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 1)};
+        Eigen::array<int64_t, 2> gate_patch = Eigen::array<int64_t, 2>{N_BATCH, N_HIDDEN};
+        for (int t = 0; t < N_TIME; t++) {
+            X_t = input.chip(t, 1);
+            gates = X_t.contract(cur_w_ih, product_dims) + cur_b_ih + cur_ht.contract(cur_w_hh, product_dims) +
+                    cur_b_hh;
+            i_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 0}, gate_patch).sigmoid();
+            f_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 1}, gate_patch).sigmoid();
+            g_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 2}, gate_patch).tanh();
+            o_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 3}, gate_patch).sigmoid();
+            cur_ct = f_t * cur_ct + i_t * g_t;
+            cur_ht = o_t * cur_ct.tanh();
+            output.chip(t, 1) = cur_ht;
+        }
+        out_pointer = output;
+    }
+    return out_pointer;
 }
+
+
