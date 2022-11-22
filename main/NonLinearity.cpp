@@ -15,7 +15,7 @@ NonLinearity::NonLinearity(std::string type, bool inplace) {
     this->inplace = inplace;
 }
 
-NonLinearity::NonLinearity(std::string type, int32_t val, bool inplace) {
+NonLinearity::NonLinearity(std::string type, int64_t val, bool inplace) {
     if (strcmp(type.c_str(), "PReLU") != 0)
         throw "NonLinearity Type Error, choose from ELU, ReLU, PReLU, Softplus";
     this->type = type;

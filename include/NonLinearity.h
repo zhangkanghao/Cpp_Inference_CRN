@@ -14,7 +14,7 @@ public:
 
     NonLinearity(std::string type, bool inplace = false);
 
-    NonLinearity(std::string type, int32_t val, bool inplace = false);
+    NonLinearity(std::string type, int64_t val, bool inplace = false);
 
     NonLinearity(std::string type, float_t val, bool inplace = false);
 
@@ -34,7 +34,7 @@ public:
 private:
     std::string type;
     float_t alpha;
-    int32_t channels;
+    int64_t channels;
     float_t beta;
     float_t threshold;
     bool inplace;
