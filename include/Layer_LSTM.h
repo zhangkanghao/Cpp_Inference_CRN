@@ -17,6 +17,8 @@ public:
 
     void LoadState(MATFile *pmFile, const std::string &state_preffix);
 
+    void LoadTestState();
+
     Eigen::Tensor<float_t, 3> forward(Eigen::Tensor<float_t, 3> &input, std::vector<Eigen::Tensor<float_t, 2>> &h_t,
                                       std::vector<Eigen::Tensor<float_t, 2>> &c_t);
 
@@ -25,8 +27,20 @@ private:
     int64_t hidden_size;
     int64_t num_layers;
     int64_t direction;
-    std::vector<Eigen::Tensor<float_t, 2>> weight_hh, weight_ih;
-    std::vector<Eigen::Tensor<float_t, 2>> bias_hh, bias_ih;
+    bool bidirectional;
+    std::vector<Eigen::Tensor<float_t, 2>> weight_ih, weight_hh;
+    std::vector<Eigen::Tensor<float_t, 2>> weight_ih_reverse, weight_hh_reverse;
+    std::vector<Eigen::Tensor<float_t, 2>> bias_ih, bias_hh;
+    std::vector<Eigen::Tensor<float_t, 2>> bias_ih_reverse, bias_hh_reverse;
+
+    Eigen::Tensor<float_t, 2> _load_mat(MATFile *pmFile, const std::string &state_name);
+
+    Eigen::Tensor<float_t, 3> _uni_lstm(Eigen::Tensor<float_t, 3> &input, std::vector<Eigen::Tensor<float_t, 2>> &h_t,
+                                        std::vector<Eigen::Tensor<float_t, 2>> &c_t);
+
+    Eigen::Tensor<float_t, 3> _bi_lstm(Eigen::Tensor<float_t, 3> &input, std::vector<Eigen::Tensor<float_t, 2>> &h_t,
+                                       std::vector<Eigen::Tensor<float_t, 2>> &c_t);
+
 
 };
 
