@@ -18,7 +18,7 @@ public:
 
     void LoadState(MATFile *pmFile, const std::string &state_preffix);
 
-    void LoadTempState();
+    void LoadTestState();
 
     Eigen::Tensor<float_t, 4> forward(Eigen::Tensor<float_t, 4> &input);
 

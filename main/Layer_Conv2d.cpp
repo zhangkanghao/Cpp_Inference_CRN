@@ -69,6 +69,16 @@ void Layer_Conv2d::LoadState(MATFile *pmFile, const std::string &state_preffix) 
     std::cout << " Finish Loading State of " + state_preffix << std::endl;
 }
 
+void Layer_Conv2d::LoadTestState() {
+    Eigen::Tensor<float_t, 4> w(this->out_channels, this->in_channels, this->kernel_size.first,
+                                this->kernel_size.second);
+    w.setConstant(1.0);
+    this->weights = w;
+    Eigen::Tensor<float_t, 2> b(1, this->out_channels);
+    b.setConstant(0.0);
+    this->bias = b;
+}
+
 Eigen::Tensor<float_t, 4> Layer_Conv2d::forward(Eigen::Tensor<float_t, 4> &input) {
     const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
 
@@ -127,12 +137,7 @@ Eigen::Tensor<float_t, 4> Layer_Conv2d::forward(Eigen::Tensor<float_t, 4> &input
     return output;
 }
 
-void Layer_Conv2d::LoadTestState() {
-    this->weights(this->out_channels, this->in_channels, this->kernel_size.first, this->kernel_size.second);
-    this->weights.setConstant(1.0);
-    this->bias(1, this->out_channels);
-    this->bias.setConstant(0.0);
-}
+
 
 
 

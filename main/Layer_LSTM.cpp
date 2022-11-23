@@ -68,29 +68,30 @@ void Layer_LSTM::LoadTestState() {
     for (int layer = 0; layer < this->num_layers; layer++) {
         int64_t _ih_DIM = layer == 0 ? this->input_size : this->hidden_size * this->direction;
         Eigen::Tensor<float_t, 2> state_w_ih(this->hidden_size * 4, _ih_DIM);
-        Eigen::Tensor<float_t, 2> state_w_ih_reverse(this->hidden_size * 4, _ih_DIM);
         Eigen::Tensor<float_t, 2> state_w_hh(this->hidden_size * 4, this->hidden_size);
-        Eigen::Tensor<float_t, 2> state_w_hh_reverse(this->hidden_size * 4, this->hidden_size);
         Eigen::Tensor<float_t, 2> state_b_ih(1, this->hidden_size * 4);
-        Eigen::Tensor<float_t, 2> state_b_ih_reverse(1, this->hidden_size * 4);
         Eigen::Tensor<float_t, 2> state_b_hh(1, this->hidden_size * 4);
-        Eigen::Tensor<float_t, 2> state_b_hh_reverse(1, this->hidden_size * 4);
         state_w_ih.setConstant(layer + 1);
-        state_w_ih_reverse.setConstant(layer + 1);
         state_w_hh.setConstant(layer + 2);
-        state_w_hh_reverse.setConstant(layer + 2);
         state_b_ih.setConstant(0.5);
-        state_b_ih_reverse.setConstant(0.5);
         state_b_hh.setConstant(1.0);
-        state_b_hh_reverse.setConstant(1.0);
         this->weight_ih.push_back(state_w_ih);
-        this->weight_ih_reverse.push_back(state_w_ih_reverse);
         this->weight_hh.push_back(state_w_hh);
-        this->weight_hh_reverse.push_back(state_w_hh_reverse);
         this->bias_ih.push_back(state_b_ih);
-        this->bias_ih_reverse.push_back(state_b_ih_reverse);
         this->bias_hh.push_back(state_b_hh);
-        this->bias_hh_reverse.push_back(state_b_hh_reverse);
+
+//        Eigen::Tensor<float_t, 2> state_w_ih_reverse(this->hidden_size * 4, _ih_DIM);
+//        Eigen::Tensor<float_t, 2> state_w_hh_reverse(this->hidden_size * 4, this->hidden_size);
+//        Eigen::Tensor<float_t, 2> state_b_ih_reverse(1, this->hidden_size * 4);
+//        Eigen::Tensor<float_t, 2> state_b_hh_reverse(1, this->hidden_size * 4);
+//        state_w_ih_reverse.setConstant(layer + 1);
+//        state_w_hh_reverse.setConstant(layer + 2);
+//        state_b_ih_reverse.setConstant(0.5);
+//        state_b_hh_reverse.setConstant(1.0);
+//        this->weight_ih_reverse.push_back(state_w_ih_reverse);
+//        this->weight_hh_reverse.push_back(state_w_hh_reverse);
+//        this->bias_ih_reverse.push_back(state_b_ih_reverse);
+//        this->bias_hh_reverse.push_back(state_b_hh_reverse);
     }
 }
 

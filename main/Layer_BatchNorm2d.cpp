@@ -77,17 +77,15 @@ void Layer_BatchNorm2d::LoadState(MATFile *pmFile, const std::string &state_pref
     // std::cout << this->num_batches_tracked << std::endl;
 }
 
-void Layer_BatchNorm2d::LoadTempState() {
+void Layer_BatchNorm2d::LoadTestState() {
     Eigen::Tensor<float_t, 2> w(1, this->channels);
     Eigen::Tensor<float_t, 2> b(1, this->channels);
     Eigen::Tensor<float_t, 2> rm(1, this->channels);
     Eigen::Tensor<float_t, 2> rv(1, this->channels);
     w.setConstant(1);
     b.setConstant(0);
-    rm.setRandom();
-    std::cout << rm << std::endl;
-    rv.setRandom();
-    std::cout << rv << std::endl;
+    rm.setConstant(1);
+    rv.setConstant(2);
     this->weights = w;
     this->bias = b;
     this->running_mean = rm;

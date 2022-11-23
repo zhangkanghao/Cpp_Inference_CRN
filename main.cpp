@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void print4(Eigen::Tensor<float_t, 4> input) {
+void print(Eigen::Tensor<float_t, 4> input) {
     const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
     cout << "Variable:" << endl;
     cout << "[";
@@ -348,15 +348,9 @@ Eigen::Tensor<float_t, 3> lstm_forward(Eigen::Tensor<float_t, 3> &input, std::ve
 }
 */
 int main() {
-    NonLinearity nonLinearity = NonLinearity();
-    Eigen::Tensor<float, 4> input(2, 2, 3, 2);
-    input.setRandom();
-    Eigen::Tensor<float, 4> bias(2, 2, 3, 2);
-    bias.setConstant(0.5);
-    input = input - bias;
-    print4(input);
-    Eigen::Tensor<float, 4> output = nonLinearity.Softplus(input, 1.0, 20);
-    print4(output);
+    Model_CRN model = Model_CRN();
+    model.LoadTestState();
+    model.forward();
 
     /*
     Layer_BatchNorm2d bn1 = Layer_BatchNorm2d(2);

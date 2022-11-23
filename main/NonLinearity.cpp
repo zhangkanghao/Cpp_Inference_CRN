@@ -36,6 +36,8 @@ Eigen::Tensor<float_t, 4> NonLinearity::ReLU(Eigen::Tensor<float_t, 4> &input) {
                 for (int l = 0; l < d[3]; l++) {
                     if (input(i, j, k, l) <= 0) {
                         output(i, j, k, l) = 0.0;
+                    } else {
+                        output(i, j, k, l) = input(i, j, k, l);
                     }
                 }
             }
@@ -53,6 +55,8 @@ Eigen::Tensor<float_t, 4> NonLinearity::Softplus(Eigen::Tensor<float_t, 4> &inpu
                 for (int l = 0; l < d[3]; l++) {
                     if (input(i, j, k, l) * beta <= threshold) {
                         output(i, j, k, l) = logf(1 + expf((input(i, j, k, l) * beta)) / beta);
+                    } else {
+                        output(i, j, k, l) = input(i, j, k, l);
                     }
                 }
             }

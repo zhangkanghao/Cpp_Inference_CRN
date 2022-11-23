@@ -70,10 +70,13 @@ void Layer_TransposedConv2d::LoadState(MATFile *pmFile, std::string state_preffi
 }
 
 void Layer_TransposedConv2d::LoadTestState() {
-    this->weights(this->out_channels, this->in_channels, this->kernel_size.first, this->kernel_size.second);
-    this->weights.setConstant(1.0);
-    this->bias(1, this->out_channels);
-    this->bias.setConstant(0.0);
+    Eigen::Tensor<float_t, 4> w(this->out_channels, this->in_channels, this->kernel_size.first,
+                                this->kernel_size.second);
+    w.setConstant(1.0);
+    this->weights = w;
+    Eigen::Tensor<float_t, 2> b(1, this->out_channels);
+    b.setConstant(0.0);
+    this->bias = b;
 }
 
 Eigen::Tensor<float_t, 4> Layer_TransposedConv2d::forward(Eigen::Tensor<float_t, 4> &input) {

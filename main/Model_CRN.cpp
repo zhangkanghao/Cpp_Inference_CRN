@@ -7,34 +7,34 @@
 Model_CRN::Model_CRN() {
     this->enc_conv1 = Layer_Conv2d(this->enc_in_channels_list[0], this->enc_out_channels_list[0],
                                    this->enc_kernels_list[0], this->enc_strides_list[0],
-                                   this->enc_paddings_list[0]);
+                                   this->enc_dilation_list[0], this->enc_paddings_list[0]);
     this->enc_conv2 = Layer_Conv2d(this->enc_in_channels_list[1], this->enc_out_channels_list[1],
                                    this->enc_kernels_list[1], this->enc_strides_list[1],
-                                   this->enc_paddings_list[1]);
+                                   this->enc_dilation_list[1], this->enc_paddings_list[1]);
     this->enc_conv3 = Layer_Conv2d(this->enc_in_channels_list[2], this->enc_out_channels_list[2],
                                    this->enc_kernels_list[2], this->enc_strides_list[2],
-                                   this->enc_paddings_list[2]);
+                                   this->enc_dilation_list[2], this->enc_paddings_list[2]);
     this->enc_conv4 = Layer_Conv2d(this->enc_in_channels_list[3], this->enc_out_channels_list[3],
                                    this->enc_kernels_list[3], this->enc_strides_list[3],
-                                   this->enc_paddings_list[3]);
+                                   this->enc_dilation_list[3], this->enc_paddings_list[3]);
     this->enc_conv5 = Layer_Conv2d(this->enc_in_channels_list[4], this->enc_out_channels_list[4],
                                    this->enc_kernels_list[4], this->enc_strides_list[4],
-                                   this->enc_paddings_list[4]);
+                                   this->enc_dilation_list[4], this->enc_paddings_list[4]);
     this->dec_conv5 = Layer_TransposedConv2d(this->dec_in_channels_list[0], this->dec_out_channels_list[0],
                                              this->dec_kernels_list[0], this->dec_strides_list[0],
-                                             this->dec_paddings_list[0]);
+                                             this->dec_dilation_list[0], this->dec_paddings_list[0]);
     this->dec_conv4 = Layer_TransposedConv2d(this->dec_in_channels_list[1], this->dec_out_channels_list[1],
                                              this->dec_kernels_list[1], this->dec_strides_list[1],
-                                             this->dec_paddings_list[1]);
+                                             this->dec_dilation_list[1], this->dec_paddings_list[1]);
     this->dec_conv3 = Layer_TransposedConv2d(this->dec_in_channels_list[2], this->dec_out_channels_list[2],
                                              this->dec_kernels_list[2], this->dec_strides_list[2],
-                                             this->dec_paddings_list[2]);
+                                             this->dec_dilation_list[2], this->dec_paddings_list[2]);
     this->dec_conv2 = Layer_TransposedConv2d(this->dec_in_channels_list[3], this->dec_out_channels_list[3],
                                              this->dec_kernels_list[3], this->dec_strides_list[3],
-                                             this->dec_paddings_list[3]);
+                                             this->dec_dilation_list[3], this->dec_paddings_list[3]);
     this->dec_conv1 = Layer_TransposedConv2d(this->dec_in_channels_list[4], this->dec_out_channels_list[4],
                                              this->dec_kernels_list[4], this->dec_strides_list[4],
-                                             this->dec_paddings_list[4]);
+                                             this->dec_dilation_list[4], this->dec_paddings_list[4]);
     this->enc_bn1 = Layer_BatchNorm2d(this->enc_out_channels_list[0]);
     this->enc_bn2 = Layer_BatchNorm2d(this->enc_out_channels_list[1]);
     this->enc_bn3 = Layer_BatchNorm2d(this->enc_out_channels_list[2]);
@@ -127,28 +127,31 @@ void Model_CRN::LoadState(const char *state_path) {
 
 }
 
-void Model_CRN::LoadTempState() {
-    enc_conv1.LoadTempState()
-    enc_conv2.LoadState(pMatFile, "conv2");
-    enc_conv3.LoadState(pMatFile, "conv3");
-    enc_conv4.LoadState(pMatFile, "conv4");
-    enc_conv5.LoadState(pMatFile, "conv5");
-    dec_conv5.LoadState(pMatFile, "conv5_t");
-    dec_conv4.LoadState(pMatFile, "conv4_t");
-    dec_conv3.LoadState(pMatFile, "conv3_t");
-    dec_conv2.LoadState(pMatFile, "conv2_t");
-    dec_conv1.LoadState(pMatFile, "conv1_t");
-    enc_bn1.LoadState(pMatFile, "bn1");
-    enc_bn2.LoadState(pMatFile, "bn2");
-    enc_bn3.LoadState(pMatFile, "bn3");
-    enc_bn4.LoadState(pMatFile, "bn4");
-    enc_bn5.LoadState(pMatFile, "bn5");
-    dec_bn5.LoadState(pMatFile, "bn5_t");
-    dec_bn4.LoadState(pMatFile, "bn4_t");
-    dec_bn3.LoadState(pMatFile, "bn3_t");
-    dec_bn2.LoadState(pMatFile, "bn2_t");
-    dec_bn1.LoadState(pMatFile, "bn1_t");
-    lstm.LoadState(pMatFile, "lstm");
+void Model_CRN::LoadTestState() {
+    // w=1,b=0
+    enc_conv1.LoadTestState();
+    enc_conv2.LoadTestState();
+    enc_conv3.LoadTestState();
+    enc_conv4.LoadTestState();
+    enc_conv5.LoadTestState();
+    dec_conv5.LoadTestState();
+    dec_conv4.LoadTestState();
+    dec_conv3.LoadTestState();
+    dec_conv2.LoadTestState();
+    dec_conv1.LoadTestState();
+    // w=1,b=0,rm=1,rv=2
+    enc_bn1.LoadTestState();
+    enc_bn2.LoadTestState();
+    enc_bn3.LoadTestState();
+    enc_bn4.LoadTestState();
+    enc_bn5.LoadTestState();
+    dec_bn5.LoadTestState();
+    dec_bn4.LoadTestState();
+    dec_bn3.LoadTestState();
+    dec_bn2.LoadTestState();
+    dec_bn1.LoadTestState();
+    // wih=2, whh=2, bih = 1.0, bhh=1.0
+    lstm.LoadTestState();
 
 }
 
@@ -197,25 +200,24 @@ void Model_CRN::print(Eigen::Tensor<float_t, 4> input) {
 
 
 void Model_CRN::forward() {
-    Eigen::Tensor<float_t, 4> inp(1, 2, 3, 2);
-    inp.setValues({{{{1, 2}, {3, 4}, {5, 6}}, {{5, 5}, {3, 3}, {1, 1}}}});
-    Model_CRN::print(inp);
-
+    Eigen::Tensor<float_t, 4> inp(1, 1, 3, 3);
+    inp.setValues({{{{1, 2, 3}, {-2, -3, -4}, {4, 5, 6}}}});
+    print(inp);
 
     Eigen::Tensor<float_t, 4> e1 = this->enc_conv1.forward(inp);
     e1 = this->enc_bn1.forward(e1);
     e1 = this->ac.ELU(e1);
-    Eigen::Tensor<float_t, 4> e2 = this->enc_conv1.forward(e1);
-    e2 = this->enc_bn1.forward(e2);
+    Eigen::Tensor<float_t, 4> e2 = this->enc_conv2.forward(e1);
+    e2 = this->enc_bn2.forward(e2);
     e2 = this->ac.ELU(e2);
-    Eigen::Tensor<float_t, 4> e3 = this->enc_conv1.forward(e2);
-    e3 = this->enc_bn1.forward(e3);
+    Eigen::Tensor<float_t, 4> e3 = this->enc_conv3.forward(e2);
+    e3 = this->enc_bn3.forward(e3);
     e3 = this->ac.ELU(e3);
-    Eigen::Tensor<float_t, 4> e4 = this->enc_conv1.forward(e3);
-    e4 = this->enc_bn1.forward(e4);
+    Eigen::Tensor<float_t, 4> e4 = this->enc_conv4.forward(e3);
+    e4 = this->enc_bn4.forward(e4);
     e4 = this->ac.ELU(e4);
-    Eigen::Tensor<float_t, 4> e5 = this->enc_conv1.forward(e4);
-    e5 = this->enc_bn1.forward(e5);
+    Eigen::Tensor<float_t, 4> e5 = this->enc_conv5.forward(e4);
+    e5 = this->enc_bn5.forward(e5);
     e5 = this->ac.ELU(e5);
 
     Eigen::Tensor<float_t, 4>::Dimensions dims = e5.dimensions();
@@ -225,32 +227,34 @@ void Model_CRN::forward() {
     std::vector<Eigen::Tensor<float_t, 2>> h_t;
     std::vector<Eigen::Tensor<float_t, 2>> c_t;
     Eigen::Tensor<float_t, 3> lstm_out = this->lstm.forward(lstm_in, h_t, c_t);
-    Eigen::array<int64_t, 4> lstm_out_shape{dims[0], dims[2], dims[1], this->lstm_hidden * this->lstm_direcs};
+    Eigen::array<int64_t, 4> lstm_out_shape{dims[0], dims[2], dims[1], this->lstm_hidden * this->lstm_direcs / dims[1]};
     Eigen::Tensor<float_t, 4> lstm_out_view = this->viewBackward(lstm_out, lstm_out_shape);
     Eigen::Tensor<float_t, 4> lstm_out_shuffle = lstm_out_view.shuffle(shuffling);
+    print(lstm_out_shuffle);
 
     Eigen::Tensor<float_t, 4> d5_cat = lstm_out_shuffle.concatenate(e5, 1);
     Eigen::Tensor<float_t, 4> d5 = this->dec_conv5.forward(d5_cat);
-    d5 = this->dec_bn5.forward(e5);
+    d5 = this->dec_bn5.forward(d5);
     d5 = this->ac.ELU(d5);
     Eigen::Tensor<float_t, 4> d4_cat = d5.concatenate(e4, 1);
-    Eigen::Tensor<float_t, 4> d4 = this->dec_conv5.forward(d4_cat);
-    d4 = this->dec_bn5.forward(d4);
+    Eigen::Tensor<float_t, 4> d4 = this->dec_conv4.forward(d4_cat);
+    d4 = this->dec_bn4.forward(d4);
     d4 = this->ac.ELU(d4);
     Eigen::Tensor<float_t, 4> d3_cat = d4.concatenate(e3, 1);
-    Eigen::Tensor<float_t, 4> d3 = this->dec_conv5.forward(d3_cat);
-    d3 = this->dec_bn5.forward(d3);
+    Eigen::Tensor<float_t, 4> d3 = this->dec_conv3.forward(d3_cat);
+    d3 = this->dec_bn3.forward(d3);
     d3 = this->ac.ELU(d3);
     Eigen::Tensor<float_t, 4> d2_cat = d3.concatenate(e2, 1);
-    Eigen::Tensor<float_t, 4> d2 = this->dec_conv5.forward(d2_cat);
-    d2 = this->dec_bn5.forward(d2);
+    Eigen::Tensor<float_t, 4> d2 = this->dec_conv2.forward(d2_cat);
+    d2 = this->dec_bn2.forward(d2);
     d2 = this->ac.ELU(d2);
+    print(d2_cat);
+    print(d2);
     Eigen::Tensor<float_t, 4> d1_cat = d2.concatenate(e1, 1);
-    Eigen::Tensor<float_t, 4> d1 = this->dec_conv5.forward(d1_cat);
-    d1 = this->dec_bn5.forward(d1);
+    Eigen::Tensor<float_t, 4> d1 = this->dec_conv1.forward(d1_cat);
+    d1 = this->dec_bn1.forward(d1);
     d1 = this->ac.Softplus(d1);
-
-
+    print(d1);
 }
 
 Eigen::Tensor<float_t, 3> Model_CRN::viewForward(Eigen::Tensor<float_t, 4> &input) {
