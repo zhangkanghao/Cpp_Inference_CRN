@@ -8,7 +8,7 @@ Layer_BatchNorm2d::Layer_BatchNorm2d() {
     this->channels = 1;
 }
 
-Layer_BatchNorm2d::Layer_BatchNorm2d(int16_t bn_ch) {
+Layer_BatchNorm2d::Layer_BatchNorm2d(int64_t bn_ch) {
     this->channels = bn_ch;
 }
 
@@ -77,6 +77,43 @@ void Layer_BatchNorm2d::LoadState(MATFile *pmFile, const std::string &state_pref
     // std::cout << this->num_batches_tracked << std::endl;
 }
 
-void Layer_BatchNorm2d::forward(Eigen::Tensor<float_t, 4> &input) {
-
+void Layer_BatchNorm2d::LoadTempState() {
+    Eigen::Tensor<float_t, 2> w(1, this->channels);
+    Eigen::Tensor<float_t, 2> b(1, this->channels);
+    Eigen::Tensor<float_t, 2> rm(1, this->channels);
+    Eigen::Tensor<float_t, 2> rv(1, this->channels);
+    w.setConstant(1);
+    b.setConstant(0);
+    rm.setRandom();
+    std::cout << rm << std::endl;
+    rv.setRandom();
+    std::cout << rv << std::endl;
+    this->weights = w;
+    this->bias = b;
+    this->running_mean = rm;
+    this->running_var = rv;
 }
+
+
+Eigen::Tensor<float_t, 4> Layer_BatchNorm2d::forward(Eigen::Tensor<float_t, 4> &input) {
+    int64_t N_CHANNEL = this->channels;
+    const Eigen::Tensor<float_t, 4>::Dimensions &dim_inp = input.dimensions();
+    Eigen::Tensor<float_t, 4> output(dim_inp);
+    Eigen::Tensor<float_t, 3> cur_channel(dim_inp[0], dim_inp[2], dim_inp[3]);
+    Eigen::Tensor<float_t, 3> cur_res(dim_inp[0], dim_inp[2], dim_inp[3]);
+    Eigen::Tensor<float_t, 3> cur_w(dim_inp[0], dim_inp[2], dim_inp[3]);
+    Eigen::Tensor<float_t, 3> cur_b(dim_inp[0], dim_inp[2], dim_inp[3]);
+    Eigen::Tensor<float_t, 3> cur_mean(dim_inp[0], dim_inp[2], dim_inp[3]);
+    Eigen::Tensor<float_t, 3> cur_var(dim_inp[0], dim_inp[2], dim_inp[3]);
+    for (int c = 0; c < N_CHANNEL; c++) {
+        cur_channel = input.chip(c, 1);
+        cur_w.setConstant(this->weights(0, c));
+        cur_b.setConstant(this->bias(0, c));
+        cur_mean.setConstant(this->running_mean(0, c));
+        cur_var.setConstant(this->running_var(0, c));
+        cur_res = (cur_channel - cur_mean) / cur_var.pow(0.5) * cur_w + cur_b;
+        output.chip(c, 1) = cur_res;
+    }
+    return output;
+}
+

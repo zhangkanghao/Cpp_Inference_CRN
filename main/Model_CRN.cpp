@@ -141,3 +141,35 @@ void Model_CRN::forward(Wav_File &input) {
 
 }
 
+Eigen::Tensor<float_t, 3> Model_CRN::viewForward(Eigen::Tensor<float_t, 4> &input) {
+    const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
+    Eigen::Tensor<float_t, 3> output(dim_inp[0], dim_inp[1], dim_inp[2] * dim_inp[3]);
+    for (int64_t i = 0; i < dim_inp[0]; i++) {
+        for (int64_t j = 0; j < dim_inp[1]; j++) {
+            for (int64_t k = 0; k < dim_inp[2]; k++) {
+                for (int64_t l = 0; l < dim_inp[3]; l++) {
+                    output(i, j, k * dim_inp[3] + l) = input(i, j, k, l);
+                }
+            }
+        }
+    }
+    return output;
+}
+
+
+Eigen::Tensor<float_t, 4> viewBackward(Eigen::Tensor<float_t, 3> &input, Eigen::array<int64_t, 4> dims) {
+
+    Eigen::Tensor<float_t, 4> output(dims[0], dims[1], dims[2], dims[3]);
+    for (int64_t i = 0; i < dims[0]; i++) {
+        for (int64_t j = 0; j < dims[1]; j++) {
+            for (int64_t k = 0; k < dims[2]; k++) {
+                for (int64_t l = 0; l < dims[3]; l++) {
+                    output(i, j, k, l) = input(i, j, k * dims[3] + l);
+                }
+            }
+        }
+    }
+    return output;
+}
+
+

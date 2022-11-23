@@ -14,14 +14,16 @@ class Layer_BatchNorm2d {
 public:
     Layer_BatchNorm2d();
 
-    Layer_BatchNorm2d(int16_t bn_ch);
+    Layer_BatchNorm2d(int64_t bn_ch);
 
     void LoadState(MATFile *pmFile, const std::string &state_preffix);
 
-    void forward(Eigen::Tensor<float_t, 4> &input);
+    void LoadTempState();
+
+    Eigen::Tensor<float_t, 4> forward(Eigen::Tensor<float_t, 4> &input);
 
 private:
-    int16_t channels;
+    int64_t channels;
     Eigen::Tensor<float_t, 2> weights;
     Eigen::Tensor<float_t, 2> bias;
     Eigen::Tensor<float_t, 2> running_mean;

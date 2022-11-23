@@ -230,28 +230,7 @@ Eigen::Tensor<float_t, 4> tranposed_conv2d(Eigen::Tensor<float_t, 4> &input) {
     return output;
 }
 */
-Eigen::Tensor<float_t, 4> transpose(Eigen::Tensor<float_t, 4> &input, Eigen::array<int64_t, 4> trans_idx) {
-    const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
-    Eigen::Tensor<size_t, 4>::Dimensions dim_out;
-    for (int i = 0; i < 4; i++) {
-        dim_out[i] = dim_inp[trans_idx[i]];
-    }
-
-    Eigen::Tensor<float_t, 4> output(dim_out[0], dim_out[1], dim_out[2], dim_out[3]);
-    for (int64_t i = 0; i < dim_out[0]; i++) {
-        for (int64_t j = 0; j < dim_out[1]; j++) {
-            for (int64_t k = 0; k < dim_out[2]; k++) {
-                for (int64_t l = 0; l < dim_out[3]; l++) {
-                    int64_t idx_inp[4] = {i, j, k, l};
-                    output(i, j, k, l) = input(idx_inp[trans_idx[0]], idx_inp[trans_idx[1]], idx_inp[trans_idx[2]],
-                                               idx_inp[trans_idx[3]]);
-                }
-            }
-        }
-    }
-    return output;
-}
-
+/*
 Eigen::Tensor<float_t, 3> viewForward(Eigen::Tensor<float_t, 4> &input) {
     const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
 
@@ -367,35 +346,52 @@ Eigen::Tensor<float_t, 3> lstm_forward(Eigen::Tensor<float_t, 3> &input, std::ve
     }
     return out_pointer;
 }
-
+*/
 int main() {
-    Layer_LSTM lstm = Layer_LSTM(channel * freq, hidden_size, num_layers, false);
+    /*
+    Layer_BatchNorm2d bn1 = Layer_BatchNorm2d(2);
+    bn1.LoadTempState();
+    Eigen::Tensor<float, 4> input(2, 2, 3, 2);
+    input.setRandom();
+    print(input);
+    Eigen::Tensor<float, 4> output = bn1.forward(input);
+    print(output);
+    */
+
+    /*
+    Layer_LSTM lstm = Layer_LSTM(channel * freq, hidden_size, num_layers, true);
+    lstm.LoadTestState();
     Eigen::Tensor<float, 4> input(batch, channel, timel, freq);
     input.setRandom();
     print(input);
 
     // LSTM
-    Eigen::Tensor<float, 4> _in_reshape = transpose(input, Eigen::array<int64_t, 4>{0, 2, 1, 3});
+    Eigen::Tensor<float, 4> _in_reshape = input.shuffle(Eigen::array<int, 4>{0, 2, 1, 3});
+    print(_in_reshape);
+
     Eigen::Tensor<float, 3> _in_view = viewForward(_in_reshape);
     vector<Eigen::Tensor<float, 2>> _hidden_state;
     vector<Eigen::Tensor<float, 2>> _cell_state;
-    Eigen::Tensor<float, 3> _lstm_out = lstm_forward(_in_view, _hidden_state, _cell_state);
-    cout << _lstm_out << endl;
-//    Eigen::Tensor<float, 4> _out_view = viewBackward(_lstm_out, Eigen::array<int64_t, 4>{batch, timel, channel,
-//                                                                                         hidden_size / channel});
-//    print(_out_view);
-//    Eigen::Tensor<float, 4> _out_reshape = transpose(_out_view, Eigen::array<int64_t, 4>{0, 2, 1, 3});
-//    print(_out_reshape);
+    Eigen::Tensor<float, 3> _lstm_out = lstm.forward(_in_view, _hidden_state, _cell_state);
+    Eigen::Tensor<float, 4>
+    _out_view = viewBackward(_lstm_out, Eigen::array<int64_t, 4>{batch, timel, channel, hidden_size * 2 / channel);
 
-//    const char *path = "C:/Users/65181/CLionProjects/CRN/resources/crn.mat";
-//    const char *wav_path = "C:/Users/65181/CLionProjects/CRN/resources/S006_ADTbabble_snr0_tgt.wav";
-//    const char *out_path = "C:/Users/65181/CLionProjects/CRN/resources/output_wav.wav";
-//    Wav_File wav = Wav_File();
-//    wav.LoadWavFile(wav_path);
-//    Model_CRN net = Model_CRN(path);
-////    net.forward(wav);
-//    wav.WriteWavFile(out_path);
-//    wav.FreeSource();
-//    return 0;
+    Eigen::Tensor<float, 4> _out_reshape = _out_view.shuffle(Eigen::array<int64_t, 4>{ 0, 2, 1, 3 });
+    print(_out_reshape);
+    */
+
+
+    /*
+    const char *path = "C:/Users/65181/CLionProjects/CRN/resources/crn.mat";
+    const char *wav_path = "C:/Users/65181/CLionProjects/CRN/resources/S006_ADTbabble_snr0_tgt.wav";
+    const char *out_path = "C:/Users/65181/CLionProjects/CRN/resources/output_wav.wav";
+    Wav_File wav = Wav_File();
+    wav.LoadWavFile(wav_path);
+    Model_CRN net = Model_CRN(path);
+    net.forward(wav);
+    wav.WriteWavFile(out_path);
+    wav.FreeSource();
+    return 0;
+     */
 
 }
