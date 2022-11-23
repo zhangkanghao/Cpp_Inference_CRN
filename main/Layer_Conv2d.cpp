@@ -12,15 +12,13 @@ Layer_Conv2d::Layer_Conv2d() {
     this->kernel_size = std::make_pair(1, 1);
     this->stride = std::make_pair(1, 1);
     this->padding = std::make_pair(0, 0);
-    this->out_padding = std::make_pair(0, 0);
 }
 
 Layer_Conv2d::Layer_Conv2d(int64_t in_ch, int64_t out_ch,
                            std::pair<int64_t, int64_t> kernel,
                            std::pair<int64_t, int64_t> stride,
                            std::pair<int64_t, int64_t> dilation,
-                           std::pair<int64_t, int64_t> padding,
-                           std::pair<int64_t, int64_t> out_padding) {
+                           std::pair<int64_t, int64_t> padding) {
     /* code */
     this->in_channels = in_ch;
     this->out_channels = out_ch;
@@ -28,7 +26,6 @@ Layer_Conv2d::Layer_Conv2d(int64_t in_ch, int64_t out_ch,
     this->stride = stride;
     this->dilation = dilation;
     this->padding = padding;
-    this->out_padding = out_padding;
 }
 
 void Layer_Conv2d::LoadState(MATFile *pmFile, const std::string &state_preffix) {
@@ -128,6 +125,13 @@ Eigen::Tensor<float_t, 4> Layer_Conv2d::forward(Eigen::Tensor<float_t, 4> &input
         }
     }
     return output;
+}
+
+void Layer_Conv2d::LoadTestState() {
+    this->weights(this->out_channels, this->in_channels, this->kernel_size.first, this->kernel_size.second);
+    this->weights.setConstant(1.0);
+    this->bias(1, this->out_channels);
+    this->bias.setConstant(0.0);
 }
 
 

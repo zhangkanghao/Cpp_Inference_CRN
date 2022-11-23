@@ -1,7 +1,8 @@
 //
 // Created by Koer on 2022/10/31.
 //
-#include <vector>
+#include "iostream"
+#include "vector"
 #include "mat.h"
 #include "matrix.h"
 #include "Layer_Conv2d.h"
@@ -23,7 +24,9 @@ public:
 
     void LoadState(const char *state_path);
 
-    void forward(Wav_File &input);
+    void LoadTempState();
+
+    void forward();
 
 private:
     /* CRN config */
@@ -44,7 +47,11 @@ private:
     const std::vector<std::pair<int64_t, int64_t>> dec_kernels_list = {5, std::make_pair(2, 3)};
     const std::vector<std::pair<int64_t, int64_t>> dec_strides_list = {5, std::make_pair(1, 2)};
     const std::vector<std::pair<int64_t, int64_t>> dec_paddings_list = {5, std::make_pair(1, 0)};
-    const std::vector<int32_t> lstm_param = {1024, 1024, 2};
+    const int64_t lstm_input = 1024;
+    const int64_t lstm_hidden = 1024;
+    const int64_t lstm_layers = 2;
+    const int64_t lstm_direcs = 2;
+    const bool lstm_bidirection = true;
 
 
     Layer_Conv2d enc_conv1;
@@ -69,12 +76,14 @@ private:
     Layer_BatchNorm2d dec_bn2;
     Layer_BatchNorm2d dec_bn1;
     Layer_LSTM lstm;
+    NonLinearity ac;
+
 
     Eigen::Tensor<float_t, 3> viewForward(Eigen::Tensor<float_t, 4> &input);
 
     Eigen::Tensor<float_t, 4> viewBackward(Eigen::Tensor<float_t, 3> &input, Eigen::array<int64_t, 4> dims);
 
-
+    void print(Eigen::Tensor<float_t, 4> input);
 };
 
 

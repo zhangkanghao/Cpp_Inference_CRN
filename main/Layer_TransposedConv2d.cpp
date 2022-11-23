@@ -69,6 +69,13 @@ void Layer_TransposedConv2d::LoadState(MATFile *pmFile, std::string state_preffi
     std::cout << " Finish Loading State of " + state_preffix << std::endl;
 }
 
+void Layer_TransposedConv2d::LoadTestState() {
+    this->weights(this->out_channels, this->in_channels, this->kernel_size.first, this->kernel_size.second);
+    this->weights.setConstant(1.0);
+    this->bias(1, this->out_channels);
+    this->bias.setConstant(0.0);
+}
+
 Eigen::Tensor<float_t, 4> Layer_TransposedConv2d::forward(Eigen::Tensor<float_t, 4> &input) {
     const Eigen::Tensor<size_t, 4>::Dimensions &dim_inp = input.dimensions();
     std::pair<int64_t, int64_t> trans_padding = std::make_pair(this->kernel_size.first - 1 - this->padding.first,
