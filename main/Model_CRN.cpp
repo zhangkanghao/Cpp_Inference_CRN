@@ -31,7 +31,8 @@ Model_CRN::Model_CRN() {
                                              this->dec_dilation_list[2], this->dec_paddings_list[2]);
     this->dec_conv2 = Layer_TransposedConv2d(this->dec_in_channels_list[3], this->dec_out_channels_list[3],
                                              this->dec_kernels_list[3], this->dec_strides_list[3],
-                                             this->dec_dilation_list[3], this->dec_paddings_list[3]);
+                                             this->dec_dilation_list[3], this->dec_paddings_list[3],
+                                             this->dec_outpadds_list[3]);
     this->dec_conv1 = Layer_TransposedConv2d(this->dec_in_channels_list[4], this->dec_out_channels_list[4],
                                              this->dec_kernels_list[4], this->dec_strides_list[4],
                                              this->dec_dilation_list[4], this->dec_paddings_list[4]);
@@ -139,7 +140,7 @@ void Model_CRN::LoadTestState() {
     dec_conv3.LoadTestState();
     dec_conv2.LoadTestState();
     dec_conv1.LoadTestState();
-    // w=1,b=0,rm=1,rv=2
+    // w=1, b=0, rm=1, rv=2
     enc_bn1.LoadTestState();
     enc_bn2.LoadTestState();
     enc_bn3.LoadTestState();
@@ -200,16 +201,18 @@ void Model_CRN::print(Eigen::Tensor<float_t, 4> input) {
 
 
 void Model_CRN::forward() {
-    Eigen::Tensor<float_t, 4> inp(1, 1, 3, 3);
-    inp.setValues({{{{1, 2, 3}, {-2, -3, -4}, {4, 5, 6}}}});
+    Eigen::Tensor<float_t, 4> inp(1, 1, 3, 9);
+    inp.setRandom();
     print(inp);
 
     Eigen::Tensor<float_t, 4> e1 = this->enc_conv1.forward(inp);
     e1 = this->enc_bn1.forward(e1);
     e1 = this->ac.ELU(e1);
+    print(e1);
     Eigen::Tensor<float_t, 4> e2 = this->enc_conv2.forward(e1);
     e2 = this->enc_bn2.forward(e2);
     e2 = this->ac.ELU(e2);
+    print(e2);
     Eigen::Tensor<float_t, 4> e3 = this->enc_conv3.forward(e2);
     e3 = this->enc_bn3.forward(e3);
     e3 = this->ac.ELU(e3);
@@ -222,7 +225,7 @@ void Model_CRN::forward() {
 
     Eigen::Tensor<float_t, 4>::Dimensions dims = e5.dimensions();
     Eigen::array<int64_t, 4> shuffling{0, 2, 1, 3};
-    Eigen::Tensor<float_t, 4> lstm_shuffle = e5.shuffle(shuffling);
+    Eigen::Tensor<float_t, 4> lstm_shuffle = e2.shuffle(shuffling);
     Eigen::Tensor<float_t, 3> lstm_in = this->viewForward(lstm_shuffle);
     std::vector<Eigen::Tensor<float_t, 2>> h_t;
     std::vector<Eigen::Tensor<float_t, 2>> c_t;
@@ -248,13 +251,10 @@ void Model_CRN::forward() {
     Eigen::Tensor<float_t, 4> d2 = this->dec_conv2.forward(d2_cat);
     d2 = this->dec_bn2.forward(d2);
     d2 = this->ac.ELU(d2);
-    print(d2_cat);
-    print(d2);
     Eigen::Tensor<float_t, 4> d1_cat = d2.concatenate(e1, 1);
     Eigen::Tensor<float_t, 4> d1 = this->dec_conv1.forward(d1_cat);
     d1 = this->dec_bn1.forward(d1);
     d1 = this->ac.Softplus(d1);
-    print(d1);
 }
 
 Eigen::Tensor<float_t, 3> Model_CRN::viewForward(Eigen::Tensor<float_t, 4> &input) {

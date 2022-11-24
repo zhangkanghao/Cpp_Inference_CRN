@@ -71,9 +71,9 @@ void Layer_LSTM::LoadTestState() {
         Eigen::Tensor<float_t, 2> state_w_hh(this->hidden_size * 4, this->hidden_size);
         Eigen::Tensor<float_t, 2> state_b_ih(1, this->hidden_size * 4);
         Eigen::Tensor<float_t, 2> state_b_hh(1, this->hidden_size * 4);
-        state_w_ih.setConstant(layer + 1);
-        state_w_hh.setConstant(layer + 2);
-        state_b_ih.setConstant(0.5);
+        state_w_ih.setConstant(2);
+        state_w_hh.setConstant(2);
+        state_b_ih.setConstant(1.0);
         state_b_hh.setConstant(1.0);
         this->weight_ih.push_back(state_w_ih);
         this->weight_hh.push_back(state_w_hh);

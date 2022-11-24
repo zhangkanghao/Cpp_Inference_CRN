@@ -102,7 +102,7 @@ Eigen::Tensor<float_t, 4> Layer_TransposedConv2d::forward(Eigen::Tensor<float_t,
     int64_t H_out = (H_in - 1) * this->stride.first - 2 * this->padding.first +
                     this->dilation.first * (this->kernel_size.first - 1) +
                     this->out_padding.first + 1;
-    int64_t W_out = (H_in - 1) * this->stride.second - 2 * this->padding.second +
+    int64_t W_out = (W_in - 1) * this->stride.second - 2 * this->padding.second +
                     this->dilation.second * (this->kernel_size.second - 1) +
                     this->out_padding.second + 1;
     Eigen::Tensor<float_t, 4> output = Eigen::Tensor<float_t, 4>(batch, out_channels, H_out, W_out);
@@ -135,30 +135,28 @@ Eigen::Tensor<float_t, 4> Layer_TransposedConv2d::forward(Eigen::Tensor<float_t,
         }
     }
     /* set out_padding value, rows = bias, cols = cols[-1] */
-
-    if (this->out_padding.first > 0 && this->out_padding.first < this->stride.first) {
+    if (this->out_padding.second > 0 && this->out_padding.second < this->stride.second) {
         for (int64_t idx_batch = 0; idx_batch < batch; idx_batch++) {
             for (int64_t idx_outc = 0; idx_outc < this->out_channels; idx_outc++) {
-                for (int64_t idx_h = H_out - this->out_padding.first; idx_h < H_out; idx_h++) {
-                    for (int64_t idx_w = 0; idx_w < W_out; idx_w++) {
+                for (int64_t idx_h = 0; idx_h < H_out; idx_h++) {
+                    for (int64_t idx_w = W_out - this->out_padding.second; idx_w < W_out; idx_w++) {
                         output(idx_batch, idx_outc, idx_h, idx_w) = this->bias(0, idx_outc);
                     }
                 }
             }
         }
     }
-    if (this->out_padding.second > 0 && this->out_padding.second < this->stride.second) {
+    if (this->out_padding.first > 0 && this->out_padding.first < this->stride.first) {
         for (int64_t idx_batch = 0; idx_batch < batch; idx_batch++) {
             for (int64_t idx_outc = 0; idx_outc < this->out_channels; idx_outc++) {
-                for (int64_t idx_h = 0; idx_h < H_out; idx_h++) {
-                    for (int64_t idx_w = W_out - this->out_padding.second; idx_w < W_out; idx_w++) {
-                        output(idx_batch, idx_outc, idx_h, idx_w) = output(idx_batch, idx_outc, idx_h, idx_w - 1);
+                for (int64_t idx_h = H_out - this->out_padding.first; idx_h < H_out; idx_h++) {
+                    for (int64_t idx_w = 0; idx_w < W_out; idx_w++) {
+                        output(idx_batch, idx_outc, idx_h, idx_w) = output(idx_batch, idx_outc, idx_h - 1, idx_w);
                     }
                 }
             }
         }
     }
-
     return output;
 }
 
