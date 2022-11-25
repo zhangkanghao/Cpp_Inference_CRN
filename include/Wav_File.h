@@ -1,7 +1,3 @@
-//
-// Created by 65181 on 2022/11/1.
-//
-
 #ifndef CRN_WAV_FILE_H
 #define CRN_WAV_FILE_H
 

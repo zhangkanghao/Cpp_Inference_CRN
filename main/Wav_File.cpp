@@ -363,8 +363,3 @@ void Wav_File::magToSpec() {
         }
     }
 }
-
-
-
-
-

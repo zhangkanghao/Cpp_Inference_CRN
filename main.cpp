@@ -348,9 +348,9 @@ Eigen::Tensor<float_t, 3> lstm_forward(Eigen::Tensor<float_t, 3> &input, std::ve
 }
 */
 int main() {
-    Model_CRN model = Model_CRN();
-    model.LoadTestState();
-    model.forward();
+//    Model_CRN model = Model_CRN();
+//    model.LoadTestState();
+//    model.forward();
 
     /*
     Layer_BatchNorm2d bn1 = Layer_BatchNorm2d(2);
@@ -385,17 +385,17 @@ int main() {
     */
 
 
-    /*
+
     const char *path = "C:/Users/65181/CLionProjects/CRN/resources/crn.mat";
-    const char *wav_path = "C:/Users/65181/CLionProjects/CRN/resources/S006_ADTbabble_snr0_tgt.wav";
-    const char *out_path = "C:/Users/65181/CLionProjects/CRN/resources/output_wav.wav";
+    const char *wav_path = "C:/Users/65181/CLionProjects/Cpp_Inference_CRN/resources/S006_ADTbabble_snr0_tgt.wav";
+    const char *out_path = "C:/Users/65181/CLionProjects/Cpp_Inference_CRN/resources/output_wav.wav";
     Wav_File wav = Wav_File();
     wav.LoadWavFile(wav_path);
-    Model_CRN net = Model_CRN(path);
-    net.forward(wav);
+    wav.setSTFT(512, 256, "hamming");
+    wav.STFT();
+    wav.ISTFT();
     wav.WriteWavFile(out_path);
     wav.FreeSource();
     return 0;
-     */
 
 }

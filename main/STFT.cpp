@@ -121,21 +121,31 @@ typedef struct FFTDataStruct {
 } FFTDataStruct;
 
 void factorize(int n, int *nFact, int fact[]);
+
 void transTableSetup(int sofar[], int actual[], int remain[],
                      int *nFact,
                      int *nPoints);
+
 void permute(const int nPoint, const int nFact,
              const int fact[], const int remain[],
              float xRe[], float xIm[],
              float yRe[], float yIm[]);
+
 void initTrig(FFTDataStruct *fftDataStruct, int radix);
+
 void fft_4(float aRe[], float aIm[]);
+
 void fft_5(float aRe[], float aIm[]);
+
 void fft_8(FFTDataStruct *fftDataStruct);
+
 void fft_10(FFTDataStruct *fftDataStruct);
+
 void fft_odd(FFTDataStruct *fftDataStruct, int radix);
+
 void twiddleTransf(FFTDataStruct *fftDataStruct, int sofarRadix, int radix, int remainRadix,
                    float yRe[], float yIm[]);
+
 void initFFTDataStruct(FFTDataStruct *fftDataStruct);
 
 void factorize(int n, int *nFact, int fact[]) {
@@ -701,16 +711,15 @@ struct fft_struct {
     int nFactor;
 };
 
-static const struct fft_struct nb_fft = {{0, 1, 4, 16},{0, 4, 4, 10},{160, 40, 10, 1}, 3};
-static const struct fft_struct wb_fft = {{0, 1, 4, 32},{0, 4, 8, 10},{320, 80, 10, 1}, 3};
-static const struct fft_struct wb_fft_16ms = {{0, 1, 8, 64},{0, 8, 8, 8},{512, 64, 8, 1}, 3};
-static const struct fft_struct swb_fft = {{0, 1, 8, 64},{0, 8, 8, 10},{640, 80, 10, 1}, 3};
-static const struct fft_struct swb_fft_16ms = {{0,1,4,16,128}, {0,4,4,8,8},{1024,256,64,8,1}, 4};
-static const struct fft_struct fb_fft = {{0, 1, 3, 12, 96},{0, 3, 4, 8, 10},{960, 320, 80, 10, 1}, 4};
-static const struct fft_struct fb_fft_16ms = {{0, 1, 3, 24, 192},{0, 3, 8, 8, 8}, {1536, 512, 64, 8, 1}, 4};
+static const struct fft_struct nb_fft = {{0, 1, 4, 16}, {0, 4, 4, 10}, {160, 40, 10, 1}, 3};
+static const struct fft_struct wb_fft = {{0, 1, 4, 32}, {0, 4, 8, 10}, {320, 80, 10, 1}, 3};
+static const struct fft_struct wb_fft_16ms = {{0, 1, 8, 64}, {0, 8, 8, 8}, {512, 64, 8, 1}, 3};
+static const struct fft_struct swb_fft = {{0, 1, 8, 64}, {0, 8, 8, 10}, {640, 80, 10, 1}, 3};
+static const struct fft_struct swb_fft_16ms = {{0, 1, 4, 16, 128}, {0, 4, 4, 8, 8}, {1024, 256, 64, 8, 1}, 4};
+static const struct fft_struct fb_fft = {{0, 1, 3, 12, 96}, {0, 3, 4, 8, 10}, {960, 320, 80, 10, 1}, 4};
+static const struct fft_struct fb_fft_16ms = {{0, 1, 3, 24, 192}, {0, 3, 8, 8, 8}, {1536, 512, 64, 8, 1}, 4};
 
-void fft(int n, float xRe[], float xIm[],
-         float yRe[], float yIm[]) {
+void fft(int n, float xRe[], float xIm[], float yRe[], float yIm[]) {
 #if 1
     FFTDataStruct fftDataStruct;
     initFFTDataStruct(&fftDataStruct);
