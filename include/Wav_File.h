@@ -2,6 +2,7 @@
 #define CRN_WAV_FILE_H
 
 #include "Eigen"
+#include "STFT.h"
 
 #define PI 3.141592653589793f
 struct Complex {
@@ -15,6 +16,8 @@ public:
     float_t *data;
     size_t wav_size;
     Complex **spec;
+    float **spec_real;
+    float **spec_imag;
     float_t **mag;
     float_t **phase;
 
@@ -43,8 +46,12 @@ public:
     /* 计算STFT */
     void STFT();
 
+    void newSTFT();
+
     /* 计算逆STFT */
     void ISTFT();
+
+    void newISTFT();
 
     /* 释放内存 */
     void FreeSource();

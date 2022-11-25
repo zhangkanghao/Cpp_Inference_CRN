@@ -114,9 +114,16 @@ void Wav_File::LoadPcmFile(const char *file_path) {
     this->fp_raw = (float *) malloc(this->wav_size * sizeof(float));
     fread(this->fp_raw, sizeof(float), this->wav_size, fp);
     fclose(fp);
+
+    for (int i = 0; i < this->wav_size; i++) {
+        this->data[i] = this->fp_raw[i];
+    }
 }
 
 void Wav_File::WritePcmFile(const char *dest_path) {
+    for (int i = 0; i < this->wav_size; i++) {
+        this->fp_raw[i] = this->data[i];
+    }
     FILE *fp = fopen(dest_path, "wb");
     fwrite(this->fp_raw, sizeof(float), this->wav_size, fp);
     fclose(fp);
@@ -126,38 +133,53 @@ void Wav_File::setSTFT(int16_t frame_size, int16_t frame_shift, const char *win_
     this->frame_size = frame_size;
     this->frame_shift = frame_shift;
     this->fft_size = this->frame_size;
-    this->frame_num = this->wav_size / frame_shift + 1;
+//    this->frame_num = this->wav_size / frame_shift + 1; //old stft
+    this->frame_num = this->wav_size / frame_shift;
 
     this->win_type = win_type;
     this->setWindow(this->win_type);
 
-    spec = (Complex **) malloc((this->fft_size / 2 + 1) * sizeof(*spec));
+    this->spec = (Complex **) malloc((this->fft_size / 2 + 1) * sizeof(*spec));
     for (int i = 0; i < (this->fft_size / 2 + 1); i++)
-        spec[i] = (Complex *) malloc(frame_num * sizeof(Complex));
+        this->spec[i] = (Complex *) malloc(this->frame_num * sizeof(Complex));
 
-    mag = (float_t **) malloc((this->fft_size / 2 + 1) * sizeof(*mag));
-    for (int i = 0; i < (this->fft_size / 2 + 1); i++)
-        mag[i] = (float_t *) malloc(frame_num * sizeof(float_t));
+    this->spec_real = (float **) malloc(this->frame_num * sizeof(*spec_real));
+    for (int i = 0; i < this->frame_num; i++)
+        this->spec_real[i] = (float *) malloc((this->fft_size / 2 + 1) * sizeof(float));
 
-    phase = (float_t **) malloc((this->fft_size / 2 + 1) * sizeof(*phase));
+    this->spec_imag = (float **) malloc(this->frame_num * sizeof(*spec_imag));
+    for (int i = 0; i < this->frame_num; i++)
+        this->spec_imag[i] = (float *) malloc((this->fft_size / 2 + 1) * sizeof(float));
+
+
+    this->mag = (float_t **) malloc((this->fft_size / 2 + 1) * sizeof(*this->mag));
     for (int i = 0; i < (this->fft_size / 2 + 1); i++)
-        phase[i] = (float_t *) malloc(frame_num * sizeof(float_t));
+        this->mag[i] = (float_t *) malloc(frame_num * sizeof(float_t));
+
+    this->phase = (float_t **) malloc((this->fft_size / 2 + 1) * sizeof(*this->phase));
+    for (int i = 0; i < (this->fft_size / 2 + 1); i++)
+        this->phase[i] = (float_t *) malloc(frame_num * sizeof(float_t));
 }
 
 void Wav_File::setWindow(const char *winType) {
     double_t a0, a1;
-    if (strcmp(winType, "hamming") == 0) {
-        a0 = 0.540000000;
-        a1 = 1 - a0;
-    } else if (strcmp(winType, "hanning") == 0) {
-        a0 = 0.50000000;
-        a1 = 1 - a0;
-    }
-    int frac = this->frame_size - 1;
     this->window = (float_t *) malloc(this->frame_size * sizeof(float_t));
-    for (int i = 0; i < this->frame_size; i++) {
-        this->window[i] = float(a0 - a1 * cos(PI * 2 * i / frac));
+    int frac = this->frame_size - 1;
+    if (strcmp(winType, "hamming") == 0) {
+        for (int i = 0; i < this->frame_size; i++) {
+            this->window[i] = float(0.540000000 - 0.460000000 * cos(PI * 2 * i / frac));
+        }
+    } else if (strcmp(winType, "hanning") == 0) {
+        for (int i = 0; i < this->frame_size; i++) {
+            this->window[i] = float(0.500000000 - 0.500000000 * cos(PI * 2 * i / frac));
+        }
+    } else if (strcmp(winType, "sqrt") == 0) {
+        for (int i = 0; i < this->frame_size; i++) {
+            this->window[i] = (float) sqrtf((0.5f - 0.5f * cosf(i / (float) (this->frame_size - 1) * 2 * PI)));
+        }
     }
+
+
 }
 
 void Wav_File::STFT() {
@@ -331,11 +353,66 @@ void Wav_File::bitrp(float_t param_real[], float_t param_imag[], int16_t param_n
     }
 }
 
+void Wav_File::newSTFT() {
+    std::vector<float_t> pad_data;
+    for (int i = 0; i < this->wav_size; i++)
+        pad_data.push_back(this->data[i]);
+    for (int i = 0; i < this->frame_shift; i++)
+        pad_data.push_back(0.0);
+
+    auto fft_r = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+    auto fft_i = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+    auto res_r = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+    auto res_i = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+
+    for (int i = 0; i < this->frame_num; i++) {
+        for (int j = 0; j < this->frame_size; j++) {
+            fft_r[j] = pad_data[i * this->frame_shift + j] * this->window[j];
+            fft_i[j] = 0.0;
+        }
+
+        fft(this->fft_size, fft_r, fft_i, res_r, res_i);
+
+        for (int j = 0; j < this->fft_size / 2 + 1; j++) {
+            this->spec_real[i][j] = res_r[j];
+            this->spec_imag[i][j] = res_i[j];
+        }
+    }
+}
+
+void Wav_File::newISTFT() {
+    auto fft_r = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+    auto fft_i = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+    auto res_r = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+    auto res_i = (float_t *) malloc(sizeof(float_t) * this->frame_size);
+
+    auto *temp = (float_t *) malloc(sizeof(float_t) * (this->wav_size + this->frame_shift));
+    memset(temp, 0, sizeof(temp));
+    for (int i = 0; i < this->frame_num; i++) {
+        for (int j = 0; j < this->fft_size / 2 + 1; j++) {
+            fft_r[j] = this->spec_real[i][j] / this->frame_size;
+            fft_i[j] = -this->spec_imag[i][j] / this->frame_size;
+        }
+        for (int j = this->fft_size / 2 + 1; j < this->fft_size; j++) {
+            fft_r[j] = fft_r[this->fft_size - j];
+            fft_i[j] = -fft_i[this->fft_size - j];
+        }
+
+        fft(this->fft_size, fft_r, fft_i, res_r, res_i);
+
+        for (int j = 0; j < this->frame_size; j++) {
+            temp[i * this->frame_shift + j] += (res_r[j] * this->window[j]);
+        }
+    }
+
+    for (int i = 0; i < wav_size; i++) {
+        this->data[i] = temp[i];
+    }
+}
+
 void Wav_File::FreeSource() {
     free(this->ip_raw);
     free(this->fp_raw);
-    free(this->real);
-    free(this->imag);
     free(this->spec);
     free(this->mag);
     free(this->phase);

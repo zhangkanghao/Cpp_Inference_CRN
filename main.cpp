@@ -391,9 +391,9 @@ int main() {
     const char *out_path = "C:/Users/65181/CLionProjects/Cpp_Inference_CRN/resources/output_wav.wav";
     Wav_File wav = Wav_File();
     wav.LoadWavFile(wav_path);
-    wav.setSTFT(512, 256, "hamming");
-    wav.STFT();
-    wav.ISTFT();
+    wav.setSTFT(320, 160, "sqrt");
+    wav.newSTFT();
+    wav.newISTFT();
     wav.WriteWavFile(out_path);
     wav.FreeSource();
     return 0;
