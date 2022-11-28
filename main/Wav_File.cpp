@@ -133,8 +133,7 @@ void Wav_File::setSTFT(int16_t frame_size, int16_t frame_shift, const char *win_
     this->frame_size = frame_size;
     this->frame_shift = frame_shift;
     this->fft_size = this->frame_size;
-//    this->frame_num = this->wav_size / frame_shift + 1; //old stft
-    this->frame_num = this->wav_size / frame_shift;
+    this->frame_num = this->wav_size / frame_shift + 1;
 
     this->win_type = win_type;
     this->setWindow(this->win_type);
@@ -143,15 +142,6 @@ void Wav_File::setSTFT(int16_t frame_size, int16_t frame_shift, const char *win_
     for (int i = 0; i < (this->fft_size / 2 + 1); i++)
         this->spec[i] = (Complex *) malloc(this->frame_num * sizeof(Complex));
 
-    this->spec_real = (float **) malloc(this->frame_num * sizeof(*spec_real));
-    for (int i = 0; i < this->frame_num; i++)
-        this->spec_real[i] = (float *) malloc((this->fft_size / 2 + 1) * sizeof(float));
-
-    this->spec_imag = (float **) malloc(this->frame_num * sizeof(*spec_imag));
-    for (int i = 0; i < this->frame_num; i++)
-        this->spec_imag[i] = (float *) malloc((this->fft_size / 2 + 1) * sizeof(float));
-
-
     this->mag = (float_t **) malloc((this->fft_size / 2 + 1) * sizeof(*this->mag));
     for (int i = 0; i < (this->fft_size / 2 + 1); i++)
         this->mag[i] = (float_t *) malloc(frame_num * sizeof(float_t));
@@ -159,6 +149,25 @@ void Wav_File::setSTFT(int16_t frame_size, int16_t frame_shift, const char *win_
     this->phase = (float_t **) malloc((this->fft_size / 2 + 1) * sizeof(*this->phase));
     for (int i = 0; i < (this->fft_size / 2 + 1); i++)
         this->phase[i] = (float_t *) malloc(frame_num * sizeof(float_t));
+
+    // nfft
+    this->spec_real = (float_t **) malloc(this->frame_num * sizeof(*spec_real));
+    for (int i = 0; i < this->frame_num; i++)
+        this->spec_real[i] = (float_t *) malloc((this->fft_size / 2 + 1) * sizeof(float_t));
+
+    this->spec_imag = (float_t **) malloc(this->frame_num * sizeof(*spec_imag));
+    for (int i = 0; i < this->frame_num; i++)
+        this->spec_imag[i] = (float_t *) malloc((this->fft_size / 2 + 1) * sizeof(float_t));
+
+    this->spec_mag = (float_t **) malloc(this->frame_num * sizeof(*spec_mag));
+    for (int i = 0; i < this->frame_num; i++)
+        this->spec_mag[i] = (float_t *) malloc((this->fft_size / 2 + 1) * sizeof(float_t));
+
+    this->spec_pha = (float_t **) malloc(this->frame_num * sizeof(*spec_pha));
+    for (int i = 0; i < this->frame_num; i++)
+        this->spec_pha[i] = (float_t *) malloc((this->fft_size / 2 + 1) * sizeof(float_t));
+
+
 }
 
 void Wav_File::setWindow(const char *winType) {
@@ -355,6 +364,8 @@ void Wav_File::bitrp(float_t param_real[], float_t param_imag[], int16_t param_n
 
 void Wav_File::newSTFT() {
     std::vector<float_t> pad_data;
+    for (int i = 0; i < this->frame_shift; i++)
+        pad_data.push_back(0.0);
     for (int i = 0; i < this->wav_size; i++)
         pad_data.push_back(this->data[i]);
     for (int i = 0; i < this->frame_shift; i++)
@@ -386,7 +397,7 @@ void Wav_File::newISTFT() {
     auto res_r = (float_t *) malloc(sizeof(float_t) * this->frame_size);
     auto res_i = (float_t *) malloc(sizeof(float_t) * this->frame_size);
 
-    auto *temp = (float_t *) malloc(sizeof(float_t) * (this->wav_size + this->frame_shift));
+    auto *temp = (float_t *) malloc(sizeof(float_t) * (this->wav_size + 2 * this->frame_shift));
     memset(temp, 0, sizeof(temp));
     for (int i = 0; i < this->frame_num; i++) {
         for (int j = 0; j < this->fft_size / 2 + 1; j++) {
@@ -406,7 +417,7 @@ void Wav_File::newISTFT() {
     }
 
     for (int i = 0; i < wav_size; i++) {
-        this->data[i] = temp[i];
+        this->data[i] = temp[i + this->frame_shift];
     }
 }
 
@@ -416,27 +427,34 @@ void Wav_File::FreeSource() {
     free(this->spec);
     free(this->mag);
     free(this->phase);
+    free(this->spec_real);
+    free(this->spec_imag);
+    free(this->spec_mag);
+    free(this->spec_pha);
+
 }
 
 void Wav_File::getMagnitude() {
-    for (int i = 0; i <= this->fft_size / 2; i++)
-        for (int j = 0; j < frame_num; j++)
-            mag[i][j] = sqrtf(powf(spec[i][j].real, 2) + powf(spec[i][j].imag, 2));
+    for (int i = 0; i < this->frame_num; i++) {
+        for (int j = 0; j < this->fft_size / 2 + 1; j++) {
+            this->spec_mag[i][j] = sqrtf(powf(spec_real[i][j], 2) + powf(spec_imag[i][j], 2));
+        }
+    }
 }
 
 void Wav_File::getPhase() {
-    for (int i = 0; i <= this->fft_size / 2; i++) {
-        for (int j = 0; j < frame_num; j++) {
-            phase[i][j] = atan2f(spec[i][j].imag, spec[i][j].real);
+    for (int i = 0; i < this->frame_num; i++) {
+        for (int j = 0; j < this->fft_size / 2 + 1; j++) {
+            this->spec_pha[i][j] = atan2f(spec_imag[i][j], spec_real[i][j]);
         }
     }
 }
 
 void Wav_File::magToSpec() {
-    for (int i = 0; i <= this->fft_size / 2; i++) {
-        for (int j = 0; j < frame_num; j++) {
-            spec[i][j].real = this->mag[i][j] * cosf(this->phase[i][j]);
-            spec[i][j].imag = this->mag[i][j] * sinf(this->phase[i][j]);
+    for (int i = 0; i < this->frame_num; i++) {
+        for (int j = 0; j < this->fft_size / 2 + 1; j++) {
+            spec_real[i][j] = this->spec_mag[i][j] * cosf(this->spec_pha[i][j]);
+            spec_imag[i][j] = this->spec_mag[i][j] * sinf(this->spec_pha[i][j]);
         }
     }
 }

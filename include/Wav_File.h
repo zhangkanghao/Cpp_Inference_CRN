@@ -16,10 +16,13 @@ public:
     float_t *data;
     size_t wav_size;
     Complex **spec;
-    float **spec_real;
-    float **spec_imag;
     float_t **mag;
     float_t **phase;
+    float_t **spec_real;
+    float_t **spec_imag;
+    float_t **spec_mag;
+    float_t **spec_pha;
+
 
 
     /* 无参数构造函数 */
