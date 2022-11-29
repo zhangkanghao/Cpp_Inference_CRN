@@ -35,22 +35,25 @@ void Layer_TransposedConv2d::LoadState(MATFile *pmFile, std::string state_preffi
     // Read weight
     mxArray *pa = matGetVariable(pmFile, weight_name.c_str());
     auto *values = (float_t *) mxGetData(pa);
-    // First Dimension  eg.(16,1,2,3)  ===> M=16
+    // First Dimension  eg.(32,16,2,3)  ===> M=32
     long long dim1 = mxGetM(pa);
-    // Rest Total Dimension eg.(16,1,2,3) ===>N = 1 * 2 * 3 = 6
+    // Rest Total Dimension eg.(32,16,2,3) ===>N = 16 * 2 * 3 = 96
     long long dim2 = mxGetN(pa);
     dim2 = dim2 / this->kernel_size.first / this->kernel_size.second;
-    this->weights.resize(dim1, dim2, this->kernel_size.first, this->kernel_size.second);
+    Eigen::Tensor<float_t, 4> temp(dim1, dim2, this->kernel_size.first, this->kernel_size.second);
     int idx = 0;
     for (int i = 0; i < this->kernel_size.second; i++) {
         for (int j = 0; j < this->kernel_size.first; j++) {
             for (int k = 0; k < dim2; k++) {
                 for (int l = 0; l < dim1; l++) {
-                    this->weights(l, k, j, i) = values[idx++];
+                    temp(l, k, j, i) = values[idx++];
                 }
             }
         }
     }
+    Eigen::array<bool, 4> reverse({false, false, true, true});
+    this->weights = temp.shuffle(Eigen::array<int64_t, 4>{1, 0, 2, 3}).reverse(reverse);
+
     // std::cout << this->weights << std::endl;
 
     // Read bias
@@ -66,7 +69,7 @@ void Layer_TransposedConv2d::LoadState(MATFile *pmFile, std::string state_preffi
         }
     }
     // std::cout << this->bias << std::endl;
-    std::cout << " Finish Loading State of " + state_preffix << std::endl;
+    // std::cout << " Finish Loading State of " + state_preffix << std::endl;
 }
 
 void Layer_TransposedConv2d::LoadTestState() {

@@ -129,7 +129,7 @@ void Wav_File::WritePcmFile(const char *dest_path) {
     fclose(fp);
 }
 
-void Wav_File::setSTFT(int16_t frame_size, int16_t frame_shift, const char *win_type) {
+void Wav_File::setSTFT(int64_t frame_size, int64_t frame_shift, const char *win_type) {
     this->frame_size = frame_size;
     this->frame_shift = frame_shift;
     this->fft_size = this->frame_size;
@@ -398,7 +398,7 @@ void Wav_File::newISTFT() {
     auto res_i = (float_t *) malloc(sizeof(float_t) * this->frame_size);
 
     auto *temp = (float_t *) malloc(sizeof(float_t) * (this->wav_size + 2 * this->frame_shift));
-    memset(temp, 0, sizeof(temp));
+    memset(temp, 0, sizeof(float_t) * (this->wav_size + 2 * this->frame_shift));
     for (int i = 0; i < this->frame_num; i++) {
         for (int j = 0; j < this->fft_size / 2 + 1; j++) {
             fft_r[j] = this->spec_real[i][j] / this->frame_size;
@@ -457,4 +457,22 @@ void Wav_File::magToSpec() {
             spec_imag[i][j] = this->spec_mag[i][j] * sinf(this->spec_pha[i][j]);
         }
     }
+}
+
+float_t Wav_File::getNorm(float_t scale) {
+    if (scale == 0) {
+        float_t square = 0.0;
+        for (int i = 0; i < this->wav_size; i++) {
+            square += powf(this->data[i], 2);
+        }
+        scale = sqrtf((float_t) this->wav_size / square);
+        for (int i = 0; i < this->wav_size; i++) {
+            this->data[i] *= scale;
+        }
+    } else {
+        for (int i = 0; i < this->wav_size; i++) {
+            this->data[i] /= scale;
+        }
+    }
+    return scale;
 }

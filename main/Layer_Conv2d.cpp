@@ -66,7 +66,7 @@ void Layer_Conv2d::LoadState(MATFile *pmFile, const std::string &state_preffix) 
         }
     }
     // std::cout << this->bias << std::endl;
-    std::cout << " Finish Loading State of " + state_preffix << std::endl;
+    // std::cout << " Finish Loading State of " + state_preffix << std::endl;
 }
 
 void Layer_Conv2d::LoadTestState() {

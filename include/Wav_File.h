@@ -22,7 +22,7 @@ public:
     float_t **spec_imag;
     float_t **spec_mag;
     float_t **spec_pha;
-
+    int64_t frame_num;
 
 
     /* 无参数构造函数 */
@@ -41,7 +41,7 @@ public:
     void WritePcmFile(const char *dest_path);
 
     /* 初始化STFT */
-    void setSTFT(int16_t frame_size, int16_t frame_shift, const char *window);
+    void setSTFT(int64_t frame_size, int64_t frame_shift, const char *window);
 
     /* 设置窗函数 */
     void setWindow(const char *winType);
@@ -68,6 +68,8 @@ public:
     /* 幅度相位计算频谱 */
     void magToSpec();
 
+    float_t getNorm(float_t scale = 0);
+
 private:
     /* wav info */
     char id_riff[5], id_wave[5], id_fmt[5], id_data[5];
@@ -76,10 +78,9 @@ private:
     int32_t format_length, sample_rate, avg_bytes_sec, data_size;
 
     const char *win_type;
-    int16_t frame_size;
-    int16_t frame_shift;
-    int16_t frame_num;
-    int16_t fft_size;
+    int64_t frame_size;
+    int64_t frame_shift;
+    int64_t fft_size;
     float_t *window;
     float_t *real;
     float_t *imag;
