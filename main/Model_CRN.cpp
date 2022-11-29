@@ -221,6 +221,26 @@ void Model_CRN::sprint(Eigen::Tensor<float_t, 4> input) {
     std::cout << std::endl;
 }
 
+void Model_CRN::print3(Eigen::Tensor<float_t, 3> input) {
+    const Eigen::Tensor<size_t, 3>::Dimensions &dim_inp = input.dimensions();
+    std::cout << "Variable:" << std::endl;
+    // 0 0
+    std::cout << input(0, 0, 0) << " " << input(0, 0, 1) << " " << input(0, 0, 2) << " ";
+    std::cout << input(0, 0, dim_inp[2] - 3) << " " << input(0, 0, dim_inp[2] - 2) << " "
+              << input(0, 0, dim_inp[2] - 1);
+    std::cout << std::endl;
+
+
+    // 0 -1
+    std::cout << input(0, dim_inp[1] - 1, 0) << " " << input(0, dim_inp[1] - 1, 1) << " "
+              << input(0, dim_inp[1] - 1, 2) << " ";
+    std::cout << input(0, dim_inp[1] - 1, dim_inp[2] - 3) << " " << input(0, dim_inp[1] - 1, dim_inp[2] - 2)
+              << " "
+              << input(0, dim_inp[1] - 1, dim_inp[2] - 1);
+    std::cout << std::endl;
+}
+
+
 Eigen::Tensor<float_t, 4> Model_CRN::forward(Eigen::Tensor<float_t, 4> &inp) {
     Eigen::Tensor<float_t, 4> output;
     DWORD star_time = GetTickCount();
@@ -245,7 +265,6 @@ Eigen::Tensor<float_t, 4> Model_CRN::forward(Eigen::Tensor<float_t, 4> &inp) {
     Eigen::Tensor<float_t, 4>::Dimensions dims = e5.dimensions();
     Eigen::array<int64_t, 4> shuffling{0, 2, 1, 3};
     Eigen::Tensor<float_t, 4> lstm_shuffle = e5.shuffle(shuffling);
-    sprint(lstm_shuffle);
     Eigen::Tensor<float_t, 3> lstm_in = this->viewForward(lstm_shuffle);
     std::vector<Eigen::Tensor<float_t, 2>> h_t;
     std::vector<Eigen::Tensor<float_t, 2>> c_t;
@@ -258,14 +277,22 @@ Eigen::Tensor<float_t, 4> Model_CRN::forward(Eigen::Tensor<float_t, 4> &inp) {
     star_time = GetTickCount();
 
 
-    Eigen::Tensor<float_t, 4> d5_cat = e5.concatenate(e5, 1);
+    Eigen::Tensor<float_t, 4> d5_cat = lstm_out_shuffle.concatenate(e5, 1);
+    sprint(d5_cat);
     Eigen::Tensor<float_t, 4> d5 = this->dec_conv5.forward(d5_cat);
+    sprint(d5);
     d5 = this->dec_bn5.forward(d5);
+    sprint(d5);
     d5 = this->ac.ELU(d5);
+    sprint(d5);
     Eigen::Tensor<float_t, 4> d4_cat = d5.concatenate(e4, 1);
+    sprint(d4_cat);
     Eigen::Tensor<float_t, 4> d4 = this->dec_conv4.forward(d4_cat);
+    sprint(d4);
     d4 = this->dec_bn4.forward(d4);
+    sprint(d4);
     d4 = this->ac.ELU(d4);
+    sprint(d4);
     Eigen::Tensor<float_t, 4> d3_cat = d4.concatenate(e3, 1);
     Eigen::Tensor<float_t, 4> d3 = this->dec_conv3.forward(d3_cat);
     d3 = this->dec_bn3.forward(d3);
@@ -312,6 +339,7 @@ Eigen::Tensor<float_t, 4> Model_CRN::viewBackward(Eigen::Tensor<float_t, 3> &inp
     }
     return output;
 }
+
 
 
 

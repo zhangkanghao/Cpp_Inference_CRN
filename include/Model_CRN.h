@@ -87,6 +87,8 @@ private:
     void print(Eigen::Tensor<float_t, 4> input);
 
     void sprint(Eigen::Tensor<float_t, 4> input);
+
+    void print3(Eigen::Tensor<float_t, 3> input);
 };
 
 

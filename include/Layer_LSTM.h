@@ -42,6 +42,9 @@ private:
                                        std::vector<Eigen::Tensor<float_t, 2>> &c_t);
 
 
+    void print2(Eigen::Tensor<float_t, 2> input);
+
+    void print3(Eigen::Tensor<float_t, 3> input);
 };
 
 

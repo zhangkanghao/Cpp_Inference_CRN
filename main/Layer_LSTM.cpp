@@ -132,12 +132,12 @@ Eigen::Tensor<float_t, 3> Layer_LSTM::_uni_lstm(Eigen::Tensor<float_t, 3> &input
         Eigen::Tensor<float_t, 2> cur_b_hh = this->bias_hh[idx_layer].broadcast(Eigen::array<int64_t, 2>{N_BATCH, 1});
         Eigen::Tensor<float, 2> &cur_ht = h_t[idx_layer];
         Eigen::Tensor<float, 2> &cur_ct = c_t[idx_layer];
-        // cout << "cur_w_ih" << endl << cur_w_ih << endl;
-        // cout << "cur_w_hh" << endl << cur_w_hh << endl;
-        // cout << "cur_b_ih" << endl << cur_b_ih << endl;
-        // cout << "cur_b_hh" << endl << cur_b_hh << endl;
-        // cout << "cur_ht" << endl << cur_ht << endl;
-        // cout << "cur_ct" << endl << cur_ct << endl;
+//        print2(cur_w_ih);
+//        print2(cur_w_hh);
+//        print2(cur_b_ih);
+//        print2(cur_b_hh);
+//        print2(cur_ht);
+//        print2(cur_ct);
 
         Eigen::Tensor<float_t, 3> output(N_BATCH, N_TIME, N_HIDDEN);
         Eigen::Tensor<float_t, 2> X_t;
@@ -147,15 +147,24 @@ Eigen::Tensor<float_t, 3> Layer_LSTM::_uni_lstm(Eigen::Tensor<float_t, 3> &input
         Eigen::array<int64_t, 2> gate_patch = Eigen::array<int64_t, 2>{N_BATCH, N_HIDDEN};
         for (int t = 0; t < N_TIME; t++) {
             X_t = out_pointer.chip(t, 1);
-            // cout << "X_t" << endl << X_t << endl;
+//            print2(X_t);
+//            print2(X_t.contract(cur_w_ih, product_dims) + cur_b_ih);
+//            print2(cur_ht.contract(cur_w_hh, product_dims) + cur_b_hh);
             gates = X_t.contract(cur_w_ih, product_dims) + cur_b_ih + cur_ht.contract(cur_w_hh, product_dims) +
                     cur_b_hh;
+//            print2(gates);
             i_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 0}, gate_patch).sigmoid();
             f_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 1}, gate_patch).sigmoid();
             g_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 2}, gate_patch).tanh();
             o_t = gates.slice(Eigen::array<int64_t, 2>{0, N_HIDDEN * 3}, gate_patch).sigmoid();
+//            print2(i_t);
+//            print2(f_t);
+//            print2(g_t);
+//            print2(o_t);
             cur_ct = f_t * cur_ct + i_t * g_t;
             cur_ht = o_t * cur_ct.tanh();
+//            print2(cur_ct);
+//            print2(cur_ht);
             output.chip(t, 1) = cur_ht;
         }
         out_pointer = output;
@@ -247,8 +256,42 @@ Eigen::Tensor<float_t, 3> Layer_LSTM::_bi_lstm(Eigen::Tensor<float_t, 3> &input,
     return out_pointer;
 }
 
+void Layer_LSTM::print2(Eigen::Tensor<float_t, 2> input) {
+    const Eigen::Tensor<size_t, 2>::Dimensions &dim_inp = input.dimensions();
+    std::cout << "Variable:" << std::endl;
+    // 0 0
+    std::cout << input(0, 0) << " " << input(0, 1) << " " << input(0, 2) << " ";
+    std::cout << input(0, dim_inp[1] - 3) << " " << input(0, dim_inp[1] - 2) << " "
+              << input(0, dim_inp[1] - 1);
+    std::cout << std::endl;
 
 
+    // 0 -1
+    std::cout << input(dim_inp[0] - 1, 0) << " " << input(dim_inp[0] - 1, 1) << " "
+              << input(dim_inp[0] - 1, 2) << " ";
+    std::cout << input(dim_inp[0] - 1, dim_inp[1] - 3) << " " << input(dim_inp[0] - 1, dim_inp[1] - 2)
+              << " "
+              << input(dim_inp[0] - 1, dim_inp[1] - 1);
+    std::cout << std::endl;
+}
 
+void Layer_LSTM::print3(Eigen::Tensor<float_t, 3> input) {
+    const Eigen::Tensor<size_t, 3>::Dimensions &dim_inp = input.dimensions();
+    std::cout << "Variable:" << std::endl;
+    // 0 0
+    std::cout << input(0, 0, 0) << " " << input(0, 0, 1) << " " << input(0, 0, 2) << " ";
+    std::cout << input(0, 0, dim_inp[2] - 3) << " " << input(0, 0, dim_inp[2] - 2) << " "
+              << input(0, 0, dim_inp[2] - 1);
+    std::cout << std::endl;
+
+
+    // 0 -1
+    std::cout << input(0, dim_inp[1] - 1, 0) << " " << input(0, dim_inp[1] - 1, 1) << " "
+              << input(0, dim_inp[1] - 1, 2) << " ";
+    std::cout << input(0, dim_inp[1] - 1, dim_inp[2] - 3) << " " << input(0, dim_inp[1] - 1, dim_inp[2] - 2)
+              << " "
+              << input(0, dim_inp[1] - 1, dim_inp[2] - 1);
+    std::cout << std::endl;
+}
 
 
